@@ -1,16 +1,14 @@
 use crate::{
-    animate,
+    render::GameRender,
     snake::{Snake, SnakeNode},
     types::{FieldElement, FieldPoint, GameState},
-    utils,
 };
 use rand::Rng;
-use std::io::Stdout;
-use std::io::Write;
-use termion::{raw::RawTerminal, screen::AlternateScreen};
+use rand_pcg::Pcg64;
 
 #[derive(Debug)]
 pub struct Game {
+    pub food: Option<FieldPoint>,
     pub width: usize,
     pub height: usize,
     pub snake: Snake,
@@ -19,17 +17,14 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(screen: &mut AlternateScreen<RawTerminal<Stdout>>) -> Game {
-        let width = 20;
-        let height = 20;
-        // @todo move to a game_scene concept
+    pub fn new(game_render: &mut impl GameRender, width: usize, height: usize) -> Game {
         let mut field: Vec<Vec<FieldElement>> = vec![vec![FieldElement::Empty; height]; width];
 
         let size: usize = 4;
         let snake = Snake::new(&mut field, size);
-        animate::snake_full(&snake, screen);
-
+        game_render.snake_full(&snake);
         return Game {
+            food: None,
             snake: snake,
             field: field,
             state: GameState::None,
@@ -38,7 +33,7 @@ impl Game {
         };
     }
 
-    fn crawl(&mut self, screen: &mut AlternateScreen<RawTerminal<Stdout>>) {
+    fn crawl(&mut self, game_render: &mut impl GameRender) {
         let next_head = self.snake.next_head();
         let SnakeNode { position, .. } = next_head;
         match self.field[position.x][position.y] {
@@ -47,43 +42,36 @@ impl Game {
                 self.field[position.x][position.y] = FieldElement::Snake;
                 let tail = self.snake.nodes.pop_back().unwrap();
                 self.field[tail.position.x][tail.position.y] = FieldElement::Empty;
-                animate::snake(&Some(&tail), self, screen);
+                game_render.snake(&Some(&tail), self);
             }
             FieldElement::Treat => {
                 //@todo sum points, check for game over
                 self.snake.nodes.push_front(next_head);
                 self.field[position.x][position.y] = FieldElement::Snake;
 
-                self.add_food(screen);
-                animate::snake(&None, self, screen);
+                game_render.snake(&None, self);
+                self.add_food(game_render);
             }
             FieldElement::Snake => self.state = GameState::Over,
         }
     }
 
-    pub fn add_food(&mut self, screen: &mut AlternateScreen<RawTerminal<Stdout>>) {
+    pub fn add_food(&mut self, game_render: &mut impl GameRender) {
         let available = (self.width * self.height) - self.snake.nodes.len();
         let mut rng = rand::thread_rng();
+
         let rand_pos = rng.gen_range(0..available - 1);
         let mut pos = 0;
+
         for x in 0..self.field.len() {
             for y in 0..self.field[x].len() {
                 if self.field[x][y] == FieldElement::Empty {
                     pos += 1;
                 }
                 if pos > rand_pos {
+                    self.food = Some(FieldPoint { x, y });
+                    game_render.food(&self.food.unwrap());
                     self.field[x][y] = FieldElement::Treat;
-                    utils::write_point('🍎', FieldPoint { x, y }, screen);
-                    write!(
-                        screen,
-                        "{}{}treat: {},{}",
-                        termion::cursor::Goto(1, 22),
-                        termion::clear::CurrentLine,
-                        x,
-                        y,
-                    )
-                    .unwrap();
-
                     break;
                 }
             }
@@ -93,10 +81,10 @@ impl Game {
         }
     }
 
-    pub fn tick(&mut self, screen: &mut AlternateScreen<RawTerminal<Stdout>>) {
+    pub fn tick(&mut self, game_render: &mut impl GameRender) {
         if self.state == GameState::Quit {
             return;
         }
-        self.crawl(screen);
+        self.crawl(game_render);
     }
 }

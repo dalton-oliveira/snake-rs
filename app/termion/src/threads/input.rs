@@ -1,8 +1,8 @@
 extern crate termion;
 
-use crate::types::{Direction, GameArc, GameState};
 use std::io::stdin;
 
+use snake::types::{Direction, GameArc, GameState};
 use termion::event::Key;
 use termion::input::TermRead;
 

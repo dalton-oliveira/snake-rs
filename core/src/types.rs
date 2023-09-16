@@ -31,8 +31,7 @@ impl FieldPoint {
             Direction::Right => self.x.wrapping_add(1).wrapping_rem(direction.max.x),
             Direction::Left => self
                 .x
-                .wrapping_add(direction.max.x)
-                .wrapping_add_signed(-1)
+                .wrapping_add(direction.max.x - 1)
                 .wrapping_rem(direction.max.x),
             _ => self.x,
         };
@@ -40,8 +39,7 @@ impl FieldPoint {
             Direction::Down => self.y.wrapping_add(1).wrapping_rem(direction.max.y),
             Direction::Up => self
                 .y
-                .wrapping_add(direction.max.y)
-                .wrapping_add_signed(-1)
+                .wrapping_add(direction.max.y - 1)
                 .wrapping_rem(direction.max.y),
             _ => self.y,
         };

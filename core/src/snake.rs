@@ -6,6 +6,7 @@ pub struct SnakeNode {
     pub direction: Direction,
     pub position: FieldPoint,
 }
+
 #[derive(Debug)]
 pub struct Snake {
     pub nodes: LinkedList<SnakeNode>,
@@ -59,7 +60,7 @@ impl Snake {
     pub fn new(field: &mut Vec<Vec<FieldElement>>, size: usize) -> Snake {
         let max = FieldPoint {
             x: field.len(),
-            y: field.len(),
+            y: field[0].len(),
         };
         let start = FieldPoint {
             x: max.x.div_euclid(2),
