@@ -1,9 +1,3 @@
-use std::sync::{Arc, RwLock};
-
-use crate::game::Game;
-
-pub type GameArc = Arc<RwLock<Game>>;
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FieldElement {
     Snake,

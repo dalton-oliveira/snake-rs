@@ -1,14 +1,12 @@
 use std::{
+    sync::{Arc, RwLock},
     thread,
     time::{Duration, Instant},
 };
 
-use snake::{
-    render::GameRender,
-    types::{GameArc, GameState},
-};
+use snake::{game::Game, render::GameRender, types::GameState};
 
-pub fn run(game: GameArc, game_render: &mut impl GameRender) {
+pub fn run(game: Arc<RwLock<Game>>, game_render: &mut impl GameRender) {
     game.write().expect("errro").add_food(game_render);
 
     loop {
@@ -16,6 +14,7 @@ pub fn run(game: GameArc, game_render: &mut impl GameRender) {
 
         let mut game = game.write().expect("cant move");
         game.tick(game_render);
+
         if game.state == GameState::Quit {
             break;
         }

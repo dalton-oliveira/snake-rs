@@ -81,13 +81,13 @@ impl GameRender for TermionRender {
         write(' ', prev_tail, &mut self.screen);
 
         let nodes = &game.snake.nodes;
-        let tail = nodes.back();
+        let tail = nodes.front();
 
         write(TermionRender::snake_tail(&tail), &tail, &mut self.screen);
 
         let mut iter = nodes.iter();
         let next_position = game.snake.next_head().position;
-        let head = iter.next();
+        let head = iter.next_back();
         if game.field[next_position.x][next_position.y] == FieldElement::Treat {
             write(
                 TermionRender::snake_mounth_treat(&head),
@@ -97,7 +97,7 @@ impl GameRender for TermionRender {
         } else {
             write(TermionRender::snake_mounth(&head), &head, &mut self.screen);
         }
-        write('*', &mut iter.next(), &mut self.screen);
+        write('*', &mut iter.next_back(), &mut self.screen);
         self.screen.flush().unwrap();
     }
 

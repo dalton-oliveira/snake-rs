@@ -1,7 +1,7 @@
 use crate::types::*;
 use std::collections::LinkedList;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct SnakeNode {
     pub direction: Direction,
     pub position: FieldPoint,
@@ -31,7 +31,7 @@ impl Snake {
     }
 
     pub fn next_head(&self) -> SnakeNode {
-        let head = self.nodes.front().unwrap();
+        let head = self.nodes.back().unwrap();
         let position = head.position.add(self.direction);
         SnakeNode {
             direction: self.direction.to,
@@ -52,26 +52,25 @@ impl Snake {
         for _ in 1..size {
             let next_head = self.next_head();
             let SnakeNode { position, .. } = next_head;
-            self.nodes.push_front(next_head);
+            self.nodes.push_back(next_head);
             field[position.x][position.y] = FieldElement::Snake;
         }
     }
 
-    pub fn new(field: &mut Vec<Vec<FieldElement>>, size: usize) -> Snake {
+    pub fn new(field: &mut Vec<Vec<FieldElement>>, size: usize, to: Direction) -> Snake {
         let max = FieldPoint {
             x: field.len(),
             y: field[0].len(),
         };
         let start = FieldPoint {
-            x: max.x.div_euclid(2),
-            y: max.y.div_euclid(2),
+            // x: max.x.div_euclid(2),
+            // y: max.y.div_euclid(2),
+            x: 0,
+            y: 0,
         };
         let mut snake = Snake {
             nodes: LinkedList::new(),
-            direction: WrappableDirection {
-                to: Direction::Right,
-                max,
-            },
+            direction: WrappableDirection { to, max },
         };
 
         snake.egg_hatch(field, start, size);

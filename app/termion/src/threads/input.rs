@@ -1,12 +1,14 @@
 extern crate termion;
 
 use std::io::stdin;
+use std::sync::{Arc, RwLock};
 
-use snake::types::{Direction, GameArc, GameState};
+use snake::game::Game;
+use snake::types::{Direction, GameState};
 use termion::event::Key;
 use termion::input::TermRead;
 
-pub fn read(game_arc: GameArc) {
+pub fn read(game_arc: Arc<RwLock<Game>>) {
     let mut stdin = stdin().lock().keys();
     loop {
         let key = stdin.next();
@@ -24,12 +26,12 @@ pub fn read(game_arc: GameArc) {
     }
 }
 
-fn head_move(game_arc: GameArc, to: Direction) {
+fn head_move(game_arc: Arc<RwLock<Game>>, to: Direction) {
     let mut game = game_arc.write().expect("cant write");
     game.snake.head_to(to);
 }
 
-fn quit(game_arc: GameArc) {
+fn quit(game_arc: Arc<RwLock<Game>>) {
     let mut game = game_arc.write().expect("cant write");
     game.state = GameState::Quit;
 }

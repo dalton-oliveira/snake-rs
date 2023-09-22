@@ -1,10 +1,9 @@
 use crate::{
     render::GameRender,
     snake::{Snake, SnakeNode},
-    types::{FieldElement, FieldPoint, GameState},
+    types::{Direction, FieldElement, FieldPoint, GameState},
 };
 use rand::Rng;
-use rand_pcg::Pcg64;
 
 #[derive(Debug)]
 pub struct Game {
@@ -21,7 +20,7 @@ impl Game {
         let mut field: Vec<Vec<FieldElement>> = vec![vec![FieldElement::Empty; height]; width];
 
         let size: usize = 4;
-        let snake = Snake::new(&mut field, size);
+        let snake = Snake::new(&mut field, size, Direction::Right);
         game_render.snake_full(&snake);
         return Game {
             food: None,
@@ -32,21 +31,32 @@ impl Game {
             height,
         };
     }
+    fn update_tail_direction(&mut self) {
+        let tail = self.snake.nodes.pop_front().unwrap();
+        if let Some(node) = self.snake.nodes.front() {
+            self.snake.nodes.push_front(SnakeNode {
+                position: tail.position,
+                direction: node.direction,
+            });
+        }
+    }
 
     fn crawl(&mut self, game_render: &mut impl GameRender) {
+        // @todo maybe move this to the snake
         let next_head = self.snake.next_head();
         let SnakeNode { position, .. } = next_head;
         match self.field[position.x][position.y] {
             FieldElement::Empty => {
-                self.snake.nodes.push_front(next_head);
+                self.snake.nodes.push_back(next_head);
                 self.field[position.x][position.y] = FieldElement::Snake;
-                let tail = self.snake.nodes.pop_back().unwrap();
+                let tail = self.snake.nodes.pop_front().unwrap();
                 self.field[tail.position.x][tail.position.y] = FieldElement::Empty;
                 game_render.snake(&Some(&tail), self);
+                // self.update_tail_direction();
             }
             FieldElement::Treat => {
                 //@todo sum points, check for game over
-                self.snake.nodes.push_front(next_head);
+                self.snake.nodes.push_back(next_head);
                 self.field[position.x][position.y] = FieldElement::Snake;
 
                 game_render.snake(&None, self);
