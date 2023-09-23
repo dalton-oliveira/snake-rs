@@ -15,7 +15,8 @@ pub struct Snake {
 
 impl Snake {
     pub fn opposite(&self) -> Direction {
-        match self.direction.to {
+        let direction = self.nodes.back().unwrap().direction;
+        match direction {
             Direction::Left => Direction::Right,
             Direction::Up => Direction::Down,
             Direction::Right => Direction::Left,

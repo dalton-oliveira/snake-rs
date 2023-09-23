@@ -31,15 +31,6 @@ impl Game {
             height,
         };
     }
-    fn update_tail_direction(&mut self) {
-        let tail = self.snake.nodes.pop_front().unwrap();
-        if let Some(node) = self.snake.nodes.front() {
-            self.snake.nodes.push_front(SnakeNode {
-                position: tail.position,
-                direction: node.direction,
-            });
-        }
-    }
 
     fn crawl(&mut self, game_render: &mut impl GameRender) {
         // @todo maybe move this to the snake
@@ -52,7 +43,6 @@ impl Game {
                 let tail = self.snake.nodes.pop_front().unwrap();
                 self.field[tail.position.x][tail.position.y] = FieldElement::Empty;
                 game_render.snake(&Some(&tail), self);
-                // self.update_tail_direction();
             }
             FieldElement::Treat => {
                 //@todo sum points, check for game over
