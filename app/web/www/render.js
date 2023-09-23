@@ -1,6 +1,6 @@
 export const SPACING = 1;
-export const PIXEL_W = 6;
-export const PIXEL_H = 9;
+export const PIXEL_W = 7;
+export const PIXEL_H = 10;
 
 const canvas = document.getElementById("snake-canvas");
 const ctx = canvas.getContext("2d");
@@ -55,8 +55,18 @@ export const drawSprite = (sprite, direction, x, y) => {
   }
 };
 
+export const drawFood = (x, y) => {
+  const [x0, y0] = blockToPixel(x, y);
+  const xOff = 1;
+  pixel(x0 + xOff - 1, y0);
+  pixel(x0 + xOff + 1, y0);
+  pixel(x0 + xOff, y0 - 1);
+  pixel(x0 + xOff, y0 + 1);
+};
+
 export const drawPanelSprite = (x, xOff, sprite) => {
-  clearPanelBlock(x);
+  console.log({ x, xOff, sprite });
+  clearPanelBlock(x, xOff);
   const x0 = panelBlockToPixel(x, xOff) + xOff;
   for (let i = 0; i < PANEL_BLOCK_WIDTH * PANEL_BLOCK_HEIGHT; i++) {
     if ((sprite & (1 << i)) !== 0) {
@@ -67,10 +77,11 @@ export const drawPanelSprite = (x, xOff, sprite) => {
   }
 };
 
-export const clearPanelBlock = (x) => {
+export const clearPanelBlock = (x, xOff) => {
   const [w, h] = pixelRectToCanvas(PANEL_BLOCK_WIDTH, PANEL_BLOCK_HEIGHT);
-  x = panelBlockToPixel(x);
-  x = pixelToCanvas(x);
+  x = panelBlockToPixel(x, xOff);
+  [x] = pixelToCanvas(x + xOff, 0);
+  console.log({ x, w, h });
   ctx.clearRect(x, 0, w, h);
 };
 
@@ -92,9 +103,14 @@ export const clearBlock = (x, y, direction) => {
 };
 
 export const pixel = (x, y) => {
+  ctx.save();
   const [x0, y0] = pixelToCanvas(x, y);
+  ctx.shadowBlur = 5; // Adjust this value for the desired fuzziness
+  // ctx.shadowColor = "rgba(0, 0, 0, 0.5)"; // Adjust the color and alpha as needed
+  ctx.shadowColor = "rgb(59, 75, 20)"; // Adjust the color and alpha as needed
   ctx.fillStyle = "rgb(59, 75, 20)";
   ctx.fillRect(x0, y0, PIXEL_W, PIXEL_H);
+  ctx.restore();
 };
 
 const blockToPixel = (x, y) => [
@@ -108,8 +124,8 @@ const pixelToCanvas = (x, y) => [
 ];
 
 const pixelRectToCanvas = (w, h) => [
-  w * PIXEL_W + SPACING,
-  h * PIXEL_H + SPACING,
+  w * (PIXEL_W + SPACING),
+  h * (PIXEL_H + SPACING),
 ];
 
 export function lineX(x0, y, length) {
@@ -132,7 +148,7 @@ export function rect(x, y, width, height) {
 }
 
 export function setup(width, height) {
-  const innerWidth = width * 2 * BLOCK_PIXELS + PIXEL_X_OFFSET * 2;
+  const innerWidth = width * 2 * BLOCK_PIXELS + PIXEL_X_OFFSET * 2 + 1;
   const innerHeight = height * 2 * BLOCK_PIXELS + PIXEL_Y_OFFSET * 2 + 1;
 
   canvas.width = innerWidth * (PIXEL_W + SPACING);

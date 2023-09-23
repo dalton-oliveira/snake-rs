@@ -10,6 +10,7 @@ pub struct Game {
     pub food: Option<FieldPoint>,
     pub width: usize,
     pub height: usize,
+    pub score: u16,
     pub snake: Snake,
     pub field: Vec<Vec<FieldElement>>,
     pub state: GameState,
@@ -23,6 +24,7 @@ impl Game {
         game_render.snake_full(&snake);
         return Game {
             food: None,
+            score: 0,
             snake: snake,
             field: field,
             state: GameState::None,
@@ -47,8 +49,8 @@ impl Game {
                 //@todo sum points, check for game over
                 self.snake.nodes.push_back(next_head);
                 self.field[position.x][position.y] = FieldElement::Snake;
-
-                game_render.snake(self);
+                self.score += 1;
+                game_render.eat(self);
                 self.add_food(game_render);
             }
             FieldElement::Snake => self.state = GameState::Over,

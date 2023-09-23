@@ -22,16 +22,17 @@ impl Snake {
             Direction::Down => Direction::Up,
         }
     }
-    pub fn opposite(&self) -> Direction {
+    pub fn ignore_to(&self, to: Direction) -> bool {
         let direction = self.nodes.back().unwrap().direction;
-        return Snake::opposite_of(direction);
+        return Snake::opposite_of(direction) == to || direction == to;
     }
 
-    pub fn head_to(&mut self, to: Direction) {
-        if to == self.opposite() {
-            return;
+    pub fn head_to(&mut self, to: Direction) -> bool {
+        if self.ignore_to(to) {
+            return false;
         }
         self.direction.to = to;
+        return true;
     }
 
     pub fn next_head(&self) -> SnakeNode {

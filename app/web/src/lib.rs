@@ -35,18 +35,19 @@ const HEIGHT: u32 = 10;
 impl Universe {
     pub fn new() -> Universe {
         let mut render = render::BinaryRender::new(WIDTH, HEIGHT);
-        let game = Game::new(&mut render, WIDTH as usize, HEIGHT as usize);
+        let mut game = Game::new(&mut render, WIDTH as usize, HEIGHT as usize);
+        game.add_food(&mut render);
         Universe { game, render }
     }
 
-    pub fn key_down(&mut self, to: FrontKey) {
+    pub fn key_down(&mut self, to: FrontKey) -> bool {
         let snake = &mut self.game.snake;
-        match to {
+        return match to {
             FrontKey::Up => snake.head_to(Direction::Up),
             FrontKey::Down => snake.head_to(Direction::Down),
             FrontKey::Left => snake.head_to(Direction::Left),
             FrontKey::Right => snake.head_to(Direction::Right),
-        }
+        };
     }
 
     pub fn tick(&mut self) {
