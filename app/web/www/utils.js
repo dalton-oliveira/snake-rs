@@ -34,5 +34,5 @@ export function drawFullGrid() {
   drawPixelGrid(1, 1, "lightgrey", 0, 0);
   // drawPixelGrid(2, 2, "green", 2, 2);
   // drawPixelGrid(2, 4, "purple", 2, 1);
-  drawPixelGrid(4, 2, "red", 3, 2);
+  // drawPixelGrid(4, 2, "red", 3, 2);
 }
