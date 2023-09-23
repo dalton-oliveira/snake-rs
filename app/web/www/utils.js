@@ -1,17 +1,25 @@
-import { SPACING, PIXEL_SIZE } from "./render.js";
+import {
+  SPACING,
+  BLOCK_PIXELS,
+  PIXEL_X_OFFSET,
+  PIXEL_Y_OFFSET,
+  PIXEL_W,
+  PIXEL_H,
+} from "./render.js";
 
 const canvas = document.getElementById("snake-canvas");
 const ctx = canvas.getContext("2d");
 
-export const p = (v) => v * (PIXEL_SIZE + SPACING);
+export const w = (v) => v * (PIXEL_W + SPACING);
+export const h = (v) => v * (PIXEL_H + SPACING);
 
 const drawPixelGrid = (width, height, stroke, off_x, off_y) => {
-  drawGrid(p(width), p(height), stroke, p(off_x), p(off_y));
+  drawGrid(w(width), h(height), stroke, w(off_x), h(off_y));
 };
 
 export function drawGrid(width, height, stroke, off_x, off_y) {
   ctx.strokeStyle = stroke; // Set the grid line color
-  ctx.lineWidth = SPACING;
+  ctx.lineWidth = SPACING / 2;
 
   // Draw vertical grid lines
   for (let x = off_x - SPACING; x < canvas.width; x += width) {
@@ -31,8 +39,14 @@ export function drawGrid(width, height, stroke, off_x, off_y) {
 }
 
 export function drawFullGrid() {
-  drawPixelGrid(1, 1, "lightgrey", 0, 0);
-  // drawPixelGrid(2, 2, "green", 2, 2);
+  // drawPixelGrid(1, 1, "lightgrey", 0, 0);
+  drawPixelGrid(
+    BLOCK_PIXELS,
+    BLOCK_PIXELS,
+    "green",
+    PIXEL_X_OFFSET,
+    PIXEL_Y_OFFSET
+  );
   // drawPixelGrid(2, 4, "purple", 2, 1);
   // drawPixelGrid(4, 2, "red", 3, 2);
 }

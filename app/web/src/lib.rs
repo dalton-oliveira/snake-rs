@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::*;
 
 extern crate web_sys;
 
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+#[allow(unused_macros)]
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
@@ -26,7 +26,7 @@ pub enum FrontKey {
 #[wasm_bindgen]
 pub struct Universe {
     game: Game,
-    render: render::CanvasRender,
+    render: render::BinaryRender,
 }
 const WIDTH: u32 = 20;
 const HEIGHT: u32 = 10;
@@ -34,7 +34,7 @@ const HEIGHT: u32 = 10;
 #[wasm_bindgen]
 impl Universe {
     pub fn new() -> Universe {
-        let mut render = render::CanvasRender::new(WIDTH, HEIGHT);
+        let mut render = render::BinaryRender::new(WIDTH, HEIGHT);
         let game = Game::new(&mut render, WIDTH as usize, HEIGHT as usize);
         Universe { game, render }
     }

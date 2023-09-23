@@ -18,8 +18,7 @@ pub struct Game {
 impl Game {
     pub fn new(game_render: &mut impl GameRender, width: usize, height: usize) -> Game {
         let mut field: Vec<Vec<FieldElement>> = vec![vec![FieldElement::Empty; height]; width];
-
-        let size: usize = 4;
+        let size: usize = 8;
         let snake = Snake::new(&mut field, size, Direction::Right);
         game_render.snake_full(&snake);
         return Game {
@@ -42,14 +41,14 @@ impl Game {
                 self.field[position.x][position.y] = FieldElement::Snake;
                 let tail = self.snake.nodes.pop_front().unwrap();
                 self.field[tail.position.x][tail.position.y] = FieldElement::Empty;
-                game_render.snake(&Some(&tail), self);
+                game_render.snake(self);
             }
             FieldElement::Treat => {
                 //@todo sum points, check for game over
                 self.snake.nodes.push_back(next_head);
                 self.field[position.x][position.y] = FieldElement::Snake;
 
-                game_render.snake(&None, self);
+                game_render.snake(self);
                 self.add_food(game_render);
             }
             FieldElement::Snake => self.state = GameState::Over,

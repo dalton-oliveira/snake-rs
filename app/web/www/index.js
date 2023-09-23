@@ -1,49 +1,40 @@
 import init, { Universe, FrontKey } from "./wasm/snake_web.js";
 import { drawFullGrid } from "./utils.js";
 
+let paused = true;
+function pause() {
+  paused = !paused;
+}
+
 await init();
 
 const universe = Universe.new();
-let paused = false;
+
+export const KEY_MAPPINGS = {
+  ArrowUp: () => universe.key_down(FrontKey.Up),
+  ArrowRight: () => universe.key_down(FrontKey.Right),
+  ArrowDown: () => universe.key_down(FrontKey.Down),
+  ArrowLeft: () => universe.key_down(FrontKey.Left),
+  KeyG: drawFullGrid,
+  KeyP: pause,
+  Space: pause,
+};
 
 document.addEventListener("keydown", (e) => {
-  switch (e.code) {
-    case "ArrowUp":
-      universe.key_down(FrontKey.Up);
-      e.preventDefault();
-      break;
-    case "ArrowRight":
-      universe.key_down(FrontKey.Right);
-      e.preventDefault();
-      break;
-    case "ArrowDown":
-      universe.key_down(FrontKey.Down);
-      e.preventDefault();
-      break;
-    case "ArrowLeft":
-      universe.key_down(FrontKey.Left);
-      e.preventDefault();
-      break;
-    case "KeyG":
-      drawFullGrid();
-      e.preventDefault();
-      break;
-    case "KeyP":
-    case "Space":
-      paused = !paused;
-      e.preventDefault();
-      break;
+  const func = KEY_MAPPINGS[e.code];
+  if (func) {
+    func();
+    e.preventDefault();
   }
 });
 
 function tick() {
   if (!paused) {
     universe.tick();
-    drawFullGrid();
+    // drawFullGrid();
   }
   setTimeout(tick, 1000);
 }
 
 drawFullGrid();
-paused = true;
 tick();

@@ -3,6 +3,22 @@ use snake::types::Direction;
 pub struct SpritesBinary {}
 
 impl SpritesBinary {
+    #[allow(dead_code)]
+    pub fn digit(digit: u8) -> u16 {
+        match digit {
+            0 => 0b111_101_101_101_111_0,
+            1 => 0b010_110_010_010_010_0,
+            2 => 0b111_001_111_100_111_0,
+            3 => 0b111_001_111_001_111_0,
+            4 => 0b101_101_111_001_001_0,
+            5 => 0b111_100_111_001_111_0,
+            6 => 0b111_100_111_101_111_0,
+            7 => 0b111_001_010_010_010_0,
+            8 => 0b111_101_111_101_111_0,
+            9 => 0b111_101_111_001_111_0,
+            _ => 0,
+        }
+    }
     pub fn eyes(direction: Direction) -> u8 {
         return match direction {
             Direction::Right => 0b0110_1100,
@@ -11,6 +27,21 @@ impl SpritesBinary {
             Direction::Down => 0b0110_1010,
         };
     }
+
+    pub fn full_head(from: Direction, open: bool) -> [u8; 2] {
+        return [SpritesBinary::eyes(from), SpritesBinary::mouth(from, open)];
+    }
+
+    pub fn full_node(from: Direction, to: Direction) -> [u8; 2] {
+        return [SpritesBinary::block(from), SpritesBinary::corner(from, to)];
+    }
+    pub fn full_tail(direction: Direction) -> [u8; 2] {
+        return [
+            SpritesBinary::dot(direction),
+            SpritesBinary::tail(direction),
+        ];
+    }
+
     pub fn tail(direction: Direction) -> u8 {
         return match direction {
             Direction::Left => 0b0010_1100,

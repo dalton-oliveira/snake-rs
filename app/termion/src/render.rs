@@ -13,6 +13,7 @@ use termion::{
 
 pub struct TermionRender {
     screen: AlternateScreen<RawTerminal<Stdout>>,
+    tail: Option<SnakeNode>,
 }
 
 impl TermionRender {
@@ -24,24 +25,25 @@ impl TermionRender {
             .unwrap();
         let mut screen = AlternateScreen::from(stdout);
         write!(screen, "{}{}", termion::cursor::Hide, ToAlternateScreen).unwrap();
-        TermionRender { screen }
+        TermionRender { screen, tail: None }
     }
-
-    fn snake_tail(node: &Option<&SnakeNode>) -> char {
-        if node.is_none() {
-            return ' ';
+    fn save_tail(&mut self, tail: SnakeNode) {
+        self.tail = Some(tail);
+    }
+    fn clear_tail(&mut self) {
+        if let Some(tail) = self.tail {
+            write(' ', &tail, &mut self.screen);
         }
-        return match node.unwrap().direction {
+    }
+    fn snake_tail(node: &SnakeNode) -> char {
+        return match node.direction {
             Direction::Up | Direction::Down => 'Ꞌ',
             Direction::Right | Direction::Left => '-',
         };
     }
 
-    fn snake_mounth_treat(node: &Option<&SnakeNode>) -> char {
-        if node.is_none() {
-            return ' ';
-        }
-        return match node.unwrap().direction {
+    fn snake_mounth_treat(node: &SnakeNode) -> char {
+        return match node.direction {
             Direction::Up => 'v',
             Direction::Down => 'ʌ',
             Direction::Right => '<',
@@ -49,11 +51,8 @@ impl TermionRender {
         };
     }
 
-    fn snake_mounth(node: &Option<&SnakeNode>) -> char {
-        if node.is_none() {
-            return ' ';
-        }
-        return match node.unwrap().direction {
+    fn snake_mounth(node: &SnakeNode) -> char {
+        return match node.direction {
             Direction::Up => '⩀',
             Direction::Down => '⨃',
             Direction::Right => '⪾',
@@ -66,28 +65,36 @@ impl GameRender for TermionRender {
     fn snake_full(&mut self, snake: &Snake) {
         let nodes = &snake.nodes;
         let mut iter = nodes.iter();
-        let tail = iter.next();
+        let tail = iter.next().unwrap();
+
+        self.save_tail(tail.clone());
         write(TermionRender::snake_tail(&tail), &tail, &mut self.screen);
 
         for _i in 1..nodes.len() - 1 {
-            write('*', &iter.next(), &mut self.screen);
+            write('*', &iter.next().unwrap(), &mut self.screen);
         }
-        let head = iter.next();
+        let head = iter.next().unwrap();
         write(TermionRender::snake_mounth(&head), &head, &mut self.screen);
         self.screen.flush().unwrap();
     }
 
-    fn snake(&mut self, prev_tail: &Option<&SnakeNode>, game: &Game) {
-        write(' ', prev_tail, &mut self.screen);
+    fn snake(&mut self, game: &Game) {
+        self.clear_tail();
 
-        let nodes = &game.snake.nodes;
-        let tail = nodes.front();
+        let mut iter = game.snake.nodes.iter();
+        let tail = iter.next().unwrap();
+        let tail = SnakeNode {
+            position: tail.position,
+            direction: iter.next().unwrap().direction,
+        };
+
+        self.save_tail(tail.clone());
 
         write(TermionRender::snake_tail(&tail), &tail, &mut self.screen);
 
-        let mut iter = nodes.iter();
+        let mut iter = game.snake.nodes.iter();
         let next_position = game.snake.next_head().position;
-        let head = iter.next_back();
+        let head = iter.next_back().unwrap();
         if game.field[next_position.x][next_position.y] == FieldElement::Treat {
             write(
                 TermionRender::snake_mounth_treat(&head),
@@ -97,7 +104,7 @@ impl GameRender for TermionRender {
         } else {
             write(TermionRender::snake_mounth(&head), &head, &mut self.screen);
         }
-        write('*', &mut iter.next_back(), &mut self.screen);
+        write('*', &mut iter.next_back().unwrap(), &mut self.screen);
         self.screen.flush().unwrap();
     }
 
@@ -111,15 +118,8 @@ impl GameRender for TermionRender {
 const X_OFFSET: u16 = 2;
 const Y_OFFSET: u16 = 2;
 
-pub fn write(
-    c: char,
-    node: &Option<&SnakeNode>,
-    screen: &mut AlternateScreen<RawTerminal<Stdout>>,
-) {
-    match node {
-        Some(n) => write_point(c, &n.position, screen),
-        None => (),
-    }
+pub fn write(c: char, node: &SnakeNode, screen: &mut AlternateScreen<RawTerminal<Stdout>>) {
+    write_point(c, &node.position, screen);
 }
 
 pub fn write_point(c: char, point: &FieldPoint, screen: &mut AlternateScreen<RawTerminal<Stdout>>) {
