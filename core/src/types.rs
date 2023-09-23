@@ -13,6 +13,7 @@ pub enum GameState {
     Over,
 }
 
+#[repr(C)]
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub struct FieldPoint {
     pub x: usize,
@@ -41,6 +42,7 @@ impl FieldPoint {
     }
 }
 
+#[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Direction {
     Up,
