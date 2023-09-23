@@ -58,8 +58,8 @@ const blockToPixel = (x, y) => {
 };
 
 const pixelToCanvas = (x, y) => [
-  x * (PIXEL_W + SPACING * 2) - SPACING / 2,
-  y * (PIXEL_H + SPACING * 2) - SPACING / 2,
+  x * (PIXEL_W + SPACING * 2),
+  y * (PIXEL_H + SPACING * 2),
 ];
 
 const pixelRectToCanvas = (w, h) => [
