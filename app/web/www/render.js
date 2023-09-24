@@ -53,7 +53,6 @@ export const drawSprite = (sprite, direction, x, y) => {
   if (sprite == 0) return;
   const bp = blockPixels(direction);
   const [x0, y0] = blockToPixel(x, y);
-  // console.log({ x0, y0 });
   for (let i = 0; i < 8; i++) {
     if ((sprite & (1 << i)) !== 0) {
       let x = i % bp.width;
@@ -73,9 +72,8 @@ export const drawFood = (x, y) => {
 };
 
 export const drawPanelSprite = (x, xOff, sprite) => {
-  console.log({ x, xOff, sprite });
   clearPanelBlock(x, xOff);
-  const x0 = panelBlockToPixel(x, xOff) + xOff;
+  const x0 = panelBlockToPixel(x, xOff);
   for (let i = 0; i < PANEL_BLOCK_WIDTH * PANEL_BLOCK_HEIGHT; i++) {
     if ((sprite & (1 << i)) !== 0) {
       let x = i % PANEL_BLOCK_WIDTH;
@@ -88,13 +86,13 @@ export const drawPanelSprite = (x, xOff, sprite) => {
 export const clearPanelBlock = (x, xOff) => {
   const [w, h] = pixelRectToCanvas(PANEL_BLOCK_WIDTH, PANEL_BLOCK_HEIGHT);
   x = panelBlockToPixel(x, xOff);
-  [x] = pixelToCanvas(x + xOff, 0);
+  [x] = pixelToCanvas(x, 0);
   console.log({ x, w, h });
   ctx.clearRect(x, 0, w, h);
 };
 
 export const panelBlockToPixel = (x, spacing) =>
-  x * (PANEL_BLOCK_WIDTH + spacing);
+  x * (PANEL_BLOCK_WIDTH + spacing) + spacing;
 
 /**
  * Clears sprite blocks
