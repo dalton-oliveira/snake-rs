@@ -8,7 +8,7 @@ use std::thread;
 
 fn main() {
     let mut game_render = TermionRender::new();
-    let game = Game::new(&mut game_render, 30, 30);
+    let game = Game::new(&mut game_render, 20, 10);
 
     let game_arc = Arc::new(RwLock::new(game));
     let mut handles = vec![];

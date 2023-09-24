@@ -13,7 +13,7 @@ pub fn read(game_arc: Arc<RwLock<Game>>) {
     loop {
         let key = stdin.next();
         match key.unwrap().unwrap() {
-            Key::Char('q') => {
+            Key::Char('q') | Key::Esc => {
                 quit(game_arc.clone());
                 break;
             }

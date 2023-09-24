@@ -31,6 +31,14 @@ const horizontalSprite = (direction) => [UP, DOWN].includes(direction);
 const blockPixels = (direction) =>
   horizontalSprite(direction) ? BLOCK_PIXELS_H : BLOCK_PIXELS_V;
 
+const blurryPixels = () => {
+  ctx.save();
+  ctx.shadowBlur = 1; // Adjust this value for the desired fuzziness
+  // ctx.shadowColor = "rgba(0, 0, 0, 0.5)"; // Adjust the color and alpha as needed
+  ctx.shadowColor = "rgb(59, 75, 20)"; // Adjust the color and alpha as needed
+  ctx.fillStyle = "rgb(59, 75, 20)";
+};
+
 /**
  * Transforms a sprite (unsiged 8bits) into canvas 'pixels'. When going to Right or Left,
  * sprites are draw as vertical blocks (width 2 and height 4). Going Up or Down,
@@ -103,12 +111,8 @@ export const clearBlock = (x, y, direction) => {
 };
 
 export const pixel = (x, y) => {
-  ctx.save();
   const [x0, y0] = pixelToCanvas(x, y);
-  ctx.shadowBlur = 5; // Adjust this value for the desired fuzziness
-  // ctx.shadowColor = "rgba(0, 0, 0, 0.5)"; // Adjust the color and alpha as needed
-  ctx.shadowColor = "rgb(59, 75, 20)"; // Adjust the color and alpha as needed
-  ctx.fillStyle = "rgb(59, 75, 20)";
+  blurryPixels();
   ctx.fillRect(x0, y0, PIXEL_W, PIXEL_H);
   ctx.restore();
 };
