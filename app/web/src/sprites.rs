@@ -3,6 +3,10 @@ use snake::types::Direction;
 pub struct SpritesBinary {}
 
 impl SpritesBinary {
+    pub fn food() -> u8 {
+        return 0b010_101_01;
+    }
+
     #[allow(dead_code)]
     pub fn digit(digit: u8) -> u16 {
         match digit {

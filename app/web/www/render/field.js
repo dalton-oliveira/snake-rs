@@ -25,12 +25,10 @@ export function drawSprite2x4(sprite, fieldX, fieldY) {
   drawSprite(sprite, x0, y0, 2, 4, translate);
 }
 
-export function drawFood(x, y) {
-  const [x0, y0] = [x * BLOCK_PIXELS, y * BLOCK_PIXELS];
-  pixel(...translate(x0 + 1, y0 - 1));
-  pixel(...translate(x0 + 1, y0 + 2));
-  pixel(...translate(x0, y0 + 2));
-  pixel(...translate(x0 + 1, y0 + 2));
+export function drawSprite3x3(sprite, fieldX, fieldY) {
+  const [x0, y0] = [fieldX * BLOCK_PIXELS - 1, fieldY * BLOCK_PIXELS - 1];
+  clearFieldSprite(x0, y0, 3, 3);
+  drawSprite(sprite, x0, y0, 3, 3, translate);
 }
 
 /**
@@ -39,8 +37,8 @@ export function drawFood(x, y) {
  * @param {number} y
  */
 function translate(x, y) {
-  [x, y] = reflectOnBorder(x, y);
-  return [x + xOff, y + yOff];
+  const [rx, ry] = reflectOnBorder(x, y);
+  return [rx + xOff, ry + yOff];
 }
 
 /**
@@ -61,8 +59,8 @@ function clearFieldSprite(x, y, width, height) {
 function reflectFieldSprite(x, y, w, h) {
   let [rx, ry] = reflectOnBorder(x, y);
   if (rx != x || ry != y) return [rx, ry];
-  if (x + w > xMax) return [0, y];
-  if (y + h > yMax) return [0, y];
+  if (x + w >= xMax) return [1, y];
+  if (y + h >= yMax) return [x, 1];
 }
 
 const clearFieldRectRaw = (x, y, w, h) => clearRect(x + xOff, y + yOff, w, h);
@@ -70,7 +68,7 @@ const clearFieldRectRaw = (x, y, w, h) => clearRect(x + xOff, y + yOff, w, h);
 const reflectOnBorder = (x, y) => [reflect(x, xMax), reflect(y, yMax)];
 
 function reflect(n, max) {
-  if (n >= max) return 0;
+  if (n >= max) return 1;
   if (n === 0) return max - 1;
   return n;
 }

@@ -33,9 +33,9 @@ pub struct Universe {
 }
 const CONFIG: GameConfig = GameConfig {
     size: 3,
-    start: (0, 0),
-    dim: (4, 4),
-    direction: Direction::Up,
+    start: (3, 0),
+    dim: (10, 10),
+    direction: Direction::Down,
 };
 
 #[wasm_bindgen]

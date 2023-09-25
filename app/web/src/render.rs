@@ -18,7 +18,7 @@ macro_rules! log {
 extern "C" {
     fn drawSprite4x2(sprite: u8, px: usize, py: usize);
     fn drawSprite2x4(sprite: u8, px: usize, py: usize);
-    fn drawFood(px: usize, py: usize);
+    fn drawSprite3x3(sprite: u8, px: usize, py: usize);
 }
 #[link(wasm_import_module = "/render/panel.js")]
 extern "C" {
@@ -28,9 +28,6 @@ extern "C" {
 extern "C" {
     fn setup(width: u32, height: u32);
 }
-
-#[link(wasm_import_module = "/screen.js")]
-extern "C" {}
 
 pub struct BinaryRender {
     tail: Option<SnakeNode>,
@@ -129,8 +126,10 @@ impl BinaryRender {
             None => {
                 let p = tail.position;
                 let (off_x, off_y) = match tail.direction {
-                    Direction::Right | Direction::Left => (0, 1),
-                    Direction::Down | Direction::Up => (1, 0),
+                    Direction::Right => (0, 1),
+                    Direction::Left => (2, 1),
+                    Direction::Down => (1, 0),
+                    Direction::Up => (1, 2),
                 };
                 self.go_to(&SnakeNode {
                     direction: tail.direction,
@@ -162,7 +161,6 @@ impl BinaryRender {
     }
 }
 
-// @todo prior to wrap, move only one block
 impl GameRender for BinaryRender {
     fn snake_full(&mut self, snake: &Snake) {
         let mut iter = snake.nodes.iter();
@@ -183,7 +181,6 @@ impl GameRender for BinaryRender {
             self.node(node, next);
             log!("{:?}", node.position);
             node = &next;
-            // break;
         }
         self.draw_head(node, false);
         self.update_score(0);
@@ -206,7 +203,7 @@ impl GameRender for BinaryRender {
     }
 
     fn food(&mut self, p: &FieldPoint) {
-        // log!("food:{:?}", p);
-        unsafe { drawFood(p.x * 2, p.y * 2) };
+        let sprite = SpritesBinary::food().reverse_bits();
+        unsafe { drawSprite3x3(sprite, p.x * 2 + 1, p.y * 2 + 1) };
     }
 }
