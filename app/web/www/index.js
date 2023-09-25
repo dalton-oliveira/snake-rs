@@ -40,14 +40,12 @@ function key(key) {
 }
 
 function tick() {
-  const nextTick = 300 - (performance.now() - lastTick) / 1000;
+  const nextTick = 1000 - (performance.now() - lastTick) / 1000;
   if (!paused) {
     universe.tick();
-    // drawFullGrid();
   }
   lastTick = performance.now();
   setTimeout(tick, nextTick);
 }
-
 // drawFullGrid();
 tick();

@@ -1,4 +1,4 @@
-use crate::types::*;
+use crate::{game::GameConfig, types::*};
 use std::collections::LinkedList;
 
 #[derive(Debug, Clone, Copy)]
@@ -62,23 +62,21 @@ impl Snake {
         }
     }
 
-    pub fn new(field: &mut Vec<Vec<FieldElement>>, size: usize, to: Direction) -> Snake {
+    pub fn new(field: &mut Vec<Vec<FieldElement>>, config: GameConfig) -> Snake {
+        let (width, height) = config.dim;
         let max = FieldPoint {
-            x: field.len(),
-            y: field[0].len(),
+            x: width,
+            y: height,
         };
-        let start = FieldPoint {
-            // x: max.x.div_euclid(2),
-            // y: max.y.div_euclid(2),
-            x: 0,
-            y: 0,
-        };
+        let (x, y) = config.start;
+        let start = FieldPoint { x, y };
+        let to = config.direction;
         let mut snake = Snake {
             nodes: LinkedList::new(),
             direction: WrappableDirection { to, max },
         };
 
-        snake.egg_hatch(field, start, size);
+        snake.egg_hatch(field, start, config.size);
         return snake;
     }
 }

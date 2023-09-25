@@ -16,11 +16,17 @@ pub struct Game {
     pub state: GameState,
 }
 
+pub struct GameConfig {
+    pub size: usize,
+    pub start: (usize, usize),
+    pub dim: (usize, usize),
+    pub direction: Direction,
+}
 impl Game {
-    pub fn new(game_render: &mut impl GameRender, width: usize, height: usize) -> Game {
-        let mut field: Vec<Vec<FieldElement>> = vec![vec![FieldElement::Empty; height]; width];
-        let size: usize = 8;
-        let snake = Snake::new(&mut field, size, Direction::Right);
+    pub fn new(game_render: &mut impl GameRender, config: GameConfig) -> Game {
+        let (width, height) = config.dim;
+        let mut field: Vec<Vec<FieldElement>> = vec![vec![FieldElement::Empty; width]; height];
+        let snake = Snake::new(&mut field, config);
         game_render.snake_full(&snake);
         return Game {
             food: None,
