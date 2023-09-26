@@ -14,6 +14,12 @@ pub struct Snake {
 }
 
 impl Snake {
+    pub fn is_this_eat(element: FieldElement) -> bool {
+        match element {
+            FieldElement::Empty | FieldElement::Snake => false,
+            _ => true,
+        }
+    }
     pub fn opposite_of(direction: Direction) -> Direction {
         match direction {
             Direction::Left => Direction::Right,

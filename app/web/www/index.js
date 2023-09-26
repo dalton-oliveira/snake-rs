@@ -21,10 +21,10 @@ export const KEY_MAPPINGS = {
   KeyK: () => key(FrontKey.Down),
   KeyJ: () => key(FrontKey.Left),
   Equal: () => {
-    tickPeriod -= 100;
+    tickPeriod -= 50;
   },
   Minus: () => {
-    tickPeriod += 100;
+    tickPeriod += 50;
   },
   KeyG: drawFullGrid,
   KeyP: pause,
@@ -45,7 +45,7 @@ function key(key) {
   universe.key_down(key);
 }
 
-let tickPeriod = 1000;
+let tickPeriod = 250;
 function tick() {
   const nextTick = tickPeriod - (performance.now() - lastTick) / 1000;
   if (!paused) {

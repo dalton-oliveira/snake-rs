@@ -19,6 +19,7 @@ extern "C" {
     fn drawSprite4x2(sprite: u8, px: usize, py: usize);
     fn drawSprite2x4(sprite: u8, px: usize, py: usize);
     fn drawSprite3x3(sprite: u8, px: usize, py: usize);
+    fn drawSprite8x4(sprite: u32, px: usize, py: usize);
 }
 #[link(wasm_import_module = "/render/panel.js")]
 extern "C" {
@@ -67,6 +68,12 @@ impl BinaryRender {
         self.walk();
         self.draw_field_sprite(sprites[1]);
     }
+    fn draw_sprite_3x3(&mut self, sprite: u8, p: FieldPoint) {
+        unsafe { drawSprite3x3(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
+    }
+    fn draw_sprite_8x4(&mut self, sprite: u32, p: FieldPoint) {
+        unsafe { drawSprite8x4(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
+    }
     fn go_to(&mut self, node: &SnakeNode) {
         self.pos = node.position.clone();
         self.turn(node.direction);
@@ -89,28 +96,28 @@ impl BinaryRender {
             position: self.pos,
         });
     }
-    pub fn node(&mut self, node: &SnakeNode, next: &SnakeNode) {
+    pub fn node(&mut self, node: &SnakeNode, next: &SnakeNode, has_food: bool) {
         self.turn(node.direction);
-        let sprites = SpritesBinary::full_node(node.direction, next.direction);
+        let sprites = SpritesBinary::full_node(node.direction, next.direction, has_food);
         self.draw_field_sprites(sprites);
     }
-    pub fn draw_head(&mut self, head: &SnakeNode, open: bool) {
+    pub fn draw_head(&mut self, head: &SnakeNode, game: &Game) {
+        let next_position = game.snake.next_head().position;
+        let open = Snake::is_this_eat(game.field[next_position.x][next_position.y]);
         self.turn(head.direction);
         self.walk();
         self.save_head();
         self.draw_field_sprites(SpritesBinary::full_head(head.direction, open));
     }
-    fn replace_head(&mut self, game: &Game) {
+    fn replace_head(&mut self, game: &Game, has_food: bool) {
         if let Some(prev) = self.head {
             self.go_to(&prev);
         }
-        let next_position = game.snake.next_head().position;
         let mut iter = game.snake.nodes.iter();
         let (head, neck) = (iter.next_back().unwrap(), iter.next_back().unwrap());
-        let open = game.field[next_position.x][next_position.y] == FieldElement::Treat;
 
-        self.node(neck, head);
-        self.draw_head(head, open);
+        self.node(neck, head, has_food);
+        self.draw_head(head, game);
     }
     fn clear_tail(&mut self) {
         if let Some(tail) = self.tail {
@@ -152,7 +159,7 @@ impl BinaryRender {
             self.draw_field_sprite(SpritesBinary::tail(self.to.to));
         }
     }
-    fn update_score(&mut self, score: u16) {
+    fn update_score(&mut self, score: usize) {
         let score_digits = to_base_10_array(score, 4);
         for x in 0..score_digits.len() {
             let digit = score_digits[x];
@@ -162,11 +169,10 @@ impl BinaryRender {
 }
 
 impl GameRender for BinaryRender {
-    fn snake_full(&mut self, snake: &Snake) {
-        let mut iter = snake.nodes.iter();
+    fn snake_full(&mut self, game: &Game) {
+        let mut iter = game.snake.nodes.iter();
 
         if let Some(tail) = iter.next() {
-            log!("{:?}", tail.position);
             self.update_tail(tail, tail.direction);
         } else {
             return;
@@ -178,11 +184,11 @@ impl GameRender for BinaryRender {
         let mut node = node.unwrap();
         while let Some(next) = iter.next() {
             self.walk();
-            self.node(node, next);
-            log!("{:?}", node.position);
+            self.node(node, next, false);
             node = &next;
         }
-        self.draw_head(node, false);
+
+        self.draw_head(node, game);
         self.update_score(0);
     }
 
@@ -193,17 +199,25 @@ impl GameRender for BinaryRender {
             return;
         }
         self.update_tail(tail.unwrap(), next.unwrap().direction);
-        self.replace_head(game);
+        self.replace_head(game, false);
     }
 
-    fn eat(&mut self, game: &Game) {
-        self.draw_field_sprites([0, 0]);
-        self.replace_head(game);
+    fn eat(&mut self, game: &Game, p: FieldPoint) {
+        let element = game.field[p.x][p.y];
+        match element {
+            FieldElement::Treat => self.draw_sprite_3x3(0, p),
+            _ => self.draw_sprite_8x4(0, p),
+        }
+        self.replace_head(game, true);
         self.update_score(game.score);
     }
 
-    fn food(&mut self, p: &FieldPoint) {
-        let sprite = SpritesBinary::food().reverse_bits();
-        unsafe { drawSprite3x3(sprite, p.x * 2 + 1, p.y * 2 + 1) };
+    fn food(&mut self, game: &Game, p: FieldPoint) {
+        // self.replace_head(game);
+        let element = game.field[p.x][p.y];
+        match element {
+            FieldElement::Treat => self.draw_sprite_3x3(SpritesBinary::food(), p),
+            x => self.draw_sprite_8x4(SpritesBinary::special_food(x), p),
+        };
     }
 }

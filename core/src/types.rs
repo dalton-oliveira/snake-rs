@@ -1,9 +1,26 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FieldElement {
     Snake,
     Treat,
+    Whale,
+    Turtle,
+    Alligator,
+    Chameleon,
+    Elephant,
+    Alien,
+    Caterpillar,
     Empty,
 }
+
+pub const SUPER_FOOD: [FieldElement; 7] = [
+    FieldElement::Whale,
+    FieldElement::Turtle,
+    FieldElement::Alligator,
+    FieldElement::Chameleon,
+    FieldElement::Elephant,
+    FieldElement::Alien,
+    FieldElement::Caterpillar,
+];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GameState {

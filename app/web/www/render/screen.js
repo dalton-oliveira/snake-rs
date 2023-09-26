@@ -38,7 +38,6 @@ export function drawSprite(sprite, x0, y0, width, height, translateFunc) {
 export function clearRect(x, y, w, h) {
   [w, h] = pixelRectToCanvas(w, h);
   [x, y] = pixelToCanvas(x, y);
-  // @todo check performance.now() using integers only
   // hack: rect shadows was not being totally cleared
   ctx.clearRect(x - 0.5, y - 0.5, w + 0.5, h + 0.5);
 }
@@ -56,11 +55,9 @@ export function pixel(x, y) {
 }
 
 export function lineX(x0, y, length) {
-  // blurryPixels();
   for (let x = 0; x < length; x++) {
     pixel(x0 + x, y);
   }
-  // ctx.restore();
 }
 
 export function lineY(x, y0, length) {

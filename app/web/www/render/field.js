@@ -31,6 +31,12 @@ export function drawSprite3x3(sprite, fieldX, fieldY) {
   drawSprite(sprite, x0, y0, 3, 3, translate);
 }
 
+export function drawSprite8x4(sprite, fieldX, fieldY) {
+  const [x0, y0] = [fieldX * BLOCK_PIXELS - 1, fieldY * BLOCK_PIXELS - 1];
+  clearFieldSprite(x0, y0, 8, 4);
+  drawSprite(sprite, x0, y0, 8, 4, translate);
+}
+
 /**
  * Coordinate translation to field area
  * @param {number} x
@@ -59,8 +65,8 @@ function clearFieldSprite(x, y, width, height) {
 function reflectFieldSprite(x, y, w, h) {
   let [rx, ry] = reflectOnBorder(x, y);
   if (rx != x || ry != y) return [rx, ry];
-  if (x + w >= xMax) return [1, y];
-  if (y + h >= yMax) return [x, 1];
+  if (x + w > xMax) return [1, y];
+  if (y + h > yMax) return [x, 1];
 }
 
 const clearFieldRectRaw = (x, y, w, h) => clearRect(x + xOff, y + yOff, w, h);
@@ -68,7 +74,7 @@ const clearFieldRectRaw = (x, y, w, h) => clearRect(x + xOff, y + yOff, w, h);
 const reflectOnBorder = (x, y) => [reflect(x, xMax), reflect(y, yMax)];
 
 function reflect(n, max) {
-  if (n >= max) return 1;
+  if (n > max) return 1;
   if (n === 0) return max - 1;
   return n;
 }

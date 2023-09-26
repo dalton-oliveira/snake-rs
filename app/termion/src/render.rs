@@ -77,9 +77,10 @@ impl TermionRender {
         let next_position = game.snake.next_head().position;
         let mut iter = game.snake.nodes.iter();
         let (head, neck) = (iter.next_back().unwrap(), iter.next_back().unwrap());
-        let sprite = match game.field[next_position.x][next_position.y] {
-            FieldElement::Treat => TermionRender::snake_mounth_treat(&head),
-            _ => TermionRender::snake_mounth(&head),
+        let is_eat = Snake::is_this_eat(game.field[next_position.x][next_position.y]);
+        let sprite = match is_eat {
+            true => TermionRender::snake_mounth_treat(&head),
+            false => TermionRender::snake_mounth(&head),
         };
         write(sprite, &head, &mut self.screen);
         write('*', neck, &mut self.screen);
@@ -87,8 +88,8 @@ impl TermionRender {
 }
 
 impl GameRender for TermionRender {
-    fn snake_full(&mut self, snake: &Snake) {
-        let nodes = &snake.nodes;
+    fn snake_full(&mut self, game: &Game) {
+        let nodes = &game.snake.nodes;
         let mut iter = nodes.iter();
         let tail = iter.next().unwrap();
 
@@ -108,13 +109,13 @@ impl GameRender for TermionRender {
         self.replace_head(game);
         self.screen.flush().unwrap();
     }
-    fn eat(&mut self, game: &Game) {
+    fn eat(&mut self, game: &Game, _: FieldPoint) {
         self.replace_head(game);
         self.screen.flush().unwrap();
     }
-    fn food(&mut self, p: &FieldPoint) {
-        // write_point('🍎', p, &mut self.screen);
-        write_point('@', p, &mut self.screen);
+    fn food(&mut self, _: &Game, p: FieldPoint) {
+        // @todo clause for special_food
+        write_point('@', &p, &mut self.screen);
         self.screen.flush().unwrap();
     }
 }

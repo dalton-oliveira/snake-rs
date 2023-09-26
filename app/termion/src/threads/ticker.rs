@@ -4,10 +4,16 @@ use std::{
     time::{Duration, Instant},
 };
 
-use snake::{game::Game, render::GameRender, types::GameState};
+use snake::{
+    game::Game,
+    render::GameRender,
+    types::{FieldElement, GameState},
+};
 
 pub fn run(game: Arc<RwLock<Game>>, game_render: &mut impl GameRender) {
-    game.write().expect("errro").add_food(game_render);
+    game.write()
+        .expect("errro")
+        .add_food(FieldElement::Treat, game_render);
 
     loop {
         let now = Instant::now();

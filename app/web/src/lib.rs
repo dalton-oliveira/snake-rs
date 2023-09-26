@@ -5,7 +5,7 @@ pub mod utils;
 extern crate js_sys;
 use snake::{
     game::{Game, GameConfig},
-    types::Direction,
+    types::{Direction, FieldElement},
 };
 use wasm_bindgen::prelude::*;
 
@@ -32,10 +32,10 @@ pub struct Universe {
     render: render::BinaryRender,
 }
 const CONFIG: GameConfig = GameConfig {
-    size: 3,
-    start: (3, 0),
+    size: 5,
+    start: (1, 0),
     dim: (10, 10),
-    direction: Direction::Down,
+    direction: Direction::Right,
 };
 
 #[wasm_bindgen]
@@ -45,7 +45,7 @@ impl Universe {
         let mut render = render::BinaryRender::new(width as u32, height as u32);
 
         let mut game = Game::new(&mut render, CONFIG);
-        game.add_food(&mut render);
+        game.add_food(FieldElement::Treat, &mut render);
         Universe { game, render }
     }
 
