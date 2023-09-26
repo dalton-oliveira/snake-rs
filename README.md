@@ -23,7 +23,12 @@ basic-http-server
 ### Running on browser
 
 Press `space` or key `p` to unpause. It starts paused.
-https://github.com/dalton-oliveira/snake-rust/assets/3465913/5ceb7c1f-a9e5-48c8-86fd-e2be40a73230
+
+
+
+https://github.com/dalton-oliveira/snake-rust/assets/3465913/2266c36e-3695-4536-9726-e49bdcef91f2
+
+
 
 As you can see, it's a work in progress.
 
