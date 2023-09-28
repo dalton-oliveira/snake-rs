@@ -2,7 +2,7 @@ use snake::{
     game::Game,
     render::GameRender,
     snake::SnakeNode,
-    types::{Direction, FieldPoint, Food, FoodType, WrappableDirection},
+    types::{opposite_of, Direction, FieldPoint, Food, FoodType, WrappableDirection},
 };
 
 use crate::{sprites::SpritesBinary, utils::to_base_10_array};
@@ -53,7 +53,7 @@ impl BinaryRender {
             head: None,
         }
     }
-    fn draw_field_sprite(&mut self, sprite: u8) {
+    fn draw_snake_sprite(&mut self, sprite: u8) {
         let p = self.pos;
         let sprite = sprite.reverse_bits();
         unsafe {
@@ -63,10 +63,10 @@ impl BinaryRender {
             }
         }
     }
-    fn draw_field_sprites(&mut self, sprites: [u8; 2]) {
-        self.draw_field_sprite(sprites[0]);
+    fn draw_snake_sprites(&mut self, sprites: [u8; 2]) {
+        self.draw_snake_sprite(sprites[0]);
         self.walk();
-        self.draw_field_sprite(sprites[1]);
+        self.draw_snake_sprite(sprites[1]);
     }
     fn draw_sprite_3x3(&mut self, sprite: u8, p: FieldPoint) {
         unsafe { drawSprite3x3(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
@@ -84,6 +84,13 @@ impl BinaryRender {
     fn walk(&mut self) {
         self.pos = self.pos.add_wrapping(self.to);
     }
+    fn step_back(&mut self) {
+        let opposite = WrappableDirection {
+            max: self.to.max,
+            to: opposite_of(self.to.to),
+        };
+        self.pos = self.pos.add_wrapping(opposite);
+    }
     fn save_tail(&mut self) {
         self.tail = Some(SnakeNode {
             direction: self.to.to,
@@ -99,7 +106,7 @@ impl BinaryRender {
     pub fn node(&mut self, node: &SnakeNode, next: &SnakeNode, has_food: bool) {
         self.turn(node.direction);
         let sprites = SpritesBinary::full_node(node.direction, next.direction, has_food);
-        self.draw_field_sprites(sprites);
+        self.draw_snake_sprites(sprites);
     }
     pub fn draw_head(&mut self, head: &SnakeNode, game: &Game) {
         let next_position = game.snake.next_head().position;
@@ -107,7 +114,7 @@ impl BinaryRender {
         self.turn(head.direction);
         self.walk();
         self.save_head();
-        self.draw_field_sprites(SpritesBinary::full_head(head.direction, open));
+        self.draw_snake_sprites(SpritesBinary::full_head(head.direction, open));
     }
     fn replace_head(&mut self, game: &Game, has_food: bool) {
         if let Some(prev) = self.head {
@@ -122,7 +129,7 @@ impl BinaryRender {
     fn clear_tail(&mut self) {
         if let Some(tail) = self.tail {
             self.go_to(&tail);
-            self.draw_field_sprites([0, 0]);
+            self.draw_snake_sprites([0, 0]);
         }
     }
     fn update_tail(&mut self, tail: &SnakeNode, next_to: Direction) {
@@ -149,14 +156,14 @@ impl BinaryRender {
         }
         self.save_tail();
         if tail.direction == next_to {
-            self.draw_field_sprites(SpritesBinary::full_tail(self.to.to));
+            self.draw_snake_sprites(SpritesBinary::full_tail(self.to.to));
         } else {
-            // tricky and almost do the job
-            self.draw_field_sprite(0);
+            // tricky but do the job
+            self.draw_snake_sprite(0);
             self.walk();
             self.turn(next_to);
-            self.draw_field_sprite(0);
-            self.draw_field_sprite(SpritesBinary::tail(self.to.to));
+            self.step_back();
+            self.draw_snake_sprites(SpritesBinary::full_tail(next_to));
         }
     }
     fn update_score(&mut self, score: u16) {

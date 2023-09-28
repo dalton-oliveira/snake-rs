@@ -14,17 +14,9 @@ pub struct Snake {
 }
 
 impl Snake {
-    pub fn opposite_of(direction: Direction) -> Direction {
-        match direction {
-            Direction::Left => Direction::Right,
-            Direction::Up => Direction::Down,
-            Direction::Right => Direction::Left,
-            Direction::Down => Direction::Up,
-        }
-    }
     pub fn should_ignore_turn(&self, to: Direction) -> bool {
         let direction = self.nodes.back().unwrap().direction;
-        return Snake::opposite_of(direction) == to || direction == to;
+        return opposite_of(direction) == to || direction == to;
     }
     pub fn head_to(&mut self, to: Direction) -> bool {
         if self.should_ignore_turn(to) {

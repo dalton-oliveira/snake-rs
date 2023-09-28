@@ -129,7 +129,14 @@ pub enum Direction {
     Down,
     Left,
 }
-
+pub fn opposite_of(direction: Direction) -> Direction {
+    match direction {
+        Direction::Left => Direction::Right,
+        Direction::Up => Direction::Down,
+        Direction::Right => Direction::Left,
+        Direction::Down => Direction::Up,
+    }
+}
 #[derive(Debug, Copy, Clone)]
 pub struct WrappableDirection {
     pub to: Direction,

@@ -61,8 +61,5 @@ impl Universe {
 
     pub fn tick(&mut self) {
         self.game.tick(&mut self.render);
-        if self.game.state == GameState::Over {
-            log!("dead");
-        }
     }
 }
