@@ -14,12 +14,6 @@ pub struct Snake {
 }
 
 impl Snake {
-    pub fn is_this_eat(element: FieldElement) -> bool {
-        match element {
-            FieldElement::Empty | FieldElement::Snake => false,
-            _ => true,
-        }
-    }
     pub fn opposite_of(direction: Direction) -> Direction {
         match direction {
             Direction::Left => Direction::Right,
@@ -28,34 +22,27 @@ impl Snake {
             Direction::Down => Direction::Up,
         }
     }
-    pub fn ignore_to(&self, to: Direction) -> bool {
+    pub fn should_ignore_turn(&self, to: Direction) -> bool {
         let direction = self.nodes.back().unwrap().direction;
         return Snake::opposite_of(direction) == to || direction == to;
     }
-
     pub fn head_to(&mut self, to: Direction) -> bool {
-        if self.ignore_to(to) {
+        if self.should_ignore_turn(to) {
             return false;
         }
         self.direction.to = to;
         return true;
     }
-
     pub fn next_head(&self) -> SnakeNode {
         let head = self.nodes.back().unwrap();
-        let position = head.position.add(self.direction);
+        let position = head.position.add_wrapping(self.direction);
         SnakeNode {
             direction: self.direction.to,
             position,
         }
     }
 
-    pub fn egg_hatch(
-        &mut self,
-        field: &mut Vec<Vec<FieldElement>>,
-        location: FieldPoint,
-        size: usize,
-    ) {
+    pub fn egg_hatch(&mut self, field: &mut Field, location: FieldPoint, size: u16) {
         self.nodes.push_front(SnakeNode {
             direction: self.direction.to,
             position: location,
@@ -64,11 +51,11 @@ impl Snake {
             let next_head = self.next_head();
             let SnakeNode { position, .. } = next_head;
             self.nodes.push_back(next_head);
-            field[position.x][position.y] = FieldElement::Snake;
+            field.set(&position, true);
         }
     }
 
-    pub fn new(field: &mut Vec<Vec<FieldElement>>, config: GameConfig) -> Snake {
+    pub fn new(field: &mut Field, config: GameConfig) -> Snake {
         let (width, height) = config.dim;
         let max = FieldPoint {
             x: width,

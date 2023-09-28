@@ -1,4 +1,4 @@
-use snake::types::{Direction, FieldElement};
+use snake::types::{Direction, FoodType};
 
 pub struct SpritesBinary {}
 
@@ -6,14 +6,14 @@ impl SpritesBinary {
     pub fn food() -> u8 {
         return 0b010_101_01;
     }
-    pub fn special_food(element: FieldElement) -> u32 {
+    pub fn special_food(element: FoodType) -> u32 {
         match element {
-            FieldElement::Alien => 0b01010100_11111111_10111101_10100101,
-            FieldElement::Chameleon => 0b01010100_10111110_11111111_00100100,
-            FieldElement::Elephant => 0b00011000_00101101_01111111_00011110,
-            FieldElement::Whale => 0b00001100_10011010_10111110_01111111,
-            FieldElement::Caterpillar => 0b00000000_10000000_11111111_01010101,
-            FieldElement::Turtle => 0b11000100_11001110_00111111_00001010,
+            FoodType::Whale => 0b00001100_10011010_10111110_01111111,
+            FoodType::Turtle => 0b11000100_11001110_00111111_00001010,
+            FoodType::Alien => 0b01010100_11111111_10111101_10100101,
+            FoodType::Chameleon => 0b01010100_10111110_11111111_00100100,
+            FoodType::Elephant => 0b00011000_00101101_01111111_00011110,
+            FoodType::Caterpillar => 0b00000000_10000000_11111111_01010101,
             _ => 0b11111111_11111111_11111111_11111111,
         }
     }

@@ -1,8 +1,8 @@
-use crate::{game::Game, types::FieldPoint};
+use crate::{game::Game, types::Food};
 
 pub trait GameRender {
     fn snake_full(&mut self, game: &Game);
     fn snake(&mut self, game: &Game);
-    fn eat(&mut self, game: &Game, p: FieldPoint);
-    fn food(&mut self, game: &Game, p: FieldPoint);
+    fn eat(&mut self, game: &Game, food: &Food);
+    fn added_food(&mut self, food: &Food);
 }

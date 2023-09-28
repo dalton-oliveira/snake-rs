@@ -1,8 +1,8 @@
 use snake::{
     game::Game,
     render::GameRender,
-    snake::{Snake, SnakeNode},
-    types::{Direction, FieldElement, FieldPoint, WrappableDirection},
+    snake::SnakeNode,
+    types::{Direction, FieldPoint, Food, FoodType, WrappableDirection},
 };
 
 use crate::{sprites::SpritesBinary, utils::to_base_10_array};
@@ -16,18 +16,18 @@ macro_rules! log {
 
 #[link(wasm_import_module = "/render/field.js")]
 extern "C" {
-    fn drawSprite4x2(sprite: u8, px: usize, py: usize);
-    fn drawSprite2x4(sprite: u8, px: usize, py: usize);
-    fn drawSprite3x3(sprite: u8, px: usize, py: usize);
-    fn drawSprite8x4(sprite: u32, px: usize, py: usize);
+    fn drawSprite4x2(sprite: u8, px: u16, py: u16);
+    fn drawSprite2x4(sprite: u8, px: u16, py: u16);
+    fn drawSprite3x3(sprite: u8, px: u16, py: u16);
+    fn drawSprite8x4(sprite: u32, px: u16, py: u16);
 }
 #[link(wasm_import_module = "/render/panel.js")]
 extern "C" {
-    fn drawSprite3x5(sprite: u16, px: usize);
+    fn drawSprite3x5(sprite: u16, px: u16);
 }
 #[link(wasm_import_module = "/render/index.js")]
 extern "C" {
-    fn setup(width: u32, height: u32);
+    fn setup(width: u16, height: u16);
 }
 
 pub struct BinaryRender {
@@ -38,12 +38,12 @@ pub struct BinaryRender {
 }
 
 impl BinaryRender {
-    pub fn new(width: u32, height: u32) -> BinaryRender {
+    pub fn new(width: u16, height: u16) -> BinaryRender {
         let max = FieldPoint {
-            x: width as usize * 2,
-            y: height as usize * 2,
+            x: width * 2,
+            y: height * 2,
         };
-        unsafe { setup(max.x as u32, max.y as u32) };
+        unsafe { setup(max.x, max.y) };
         let to = Direction::Right;
         let to = WrappableDirection { max, to };
         BinaryRender {
@@ -82,7 +82,7 @@ impl BinaryRender {
         self.to.to = direction;
     }
     fn walk(&mut self) {
-        self.pos = self.pos.add(self.to);
+        self.pos = self.pos.add_wrapping(self.to);
     }
     fn save_tail(&mut self) {
         self.tail = Some(SnakeNode {
@@ -103,7 +103,7 @@ impl BinaryRender {
     }
     pub fn draw_head(&mut self, head: &SnakeNode, game: &Game) {
         let next_position = game.snake.next_head().position;
-        let open = Snake::is_this_eat(game.field[next_position.x][next_position.y]);
+        let open = game.food.has_at(&next_position);
         self.turn(head.direction);
         self.walk();
         self.save_head();
@@ -159,11 +159,11 @@ impl BinaryRender {
             self.draw_field_sprite(SpritesBinary::tail(self.to.to));
         }
     }
-    fn update_score(&mut self, score: usize) {
+    fn update_score(&mut self, score: u16) {
         let score_digits = to_base_10_array(score, 4);
         for x in 0..score_digits.len() {
             let digit = score_digits[x];
-            unsafe { drawSprite3x5(SpritesBinary::digit(digit).reverse_bits(), x) }
+            unsafe { drawSprite3x5(SpritesBinary::digit(digit).reverse_bits(), x as u16) }
         }
     }
 }
@@ -189,7 +189,7 @@ impl GameRender for BinaryRender {
         }
 
         self.draw_head(node, game);
-        self.update_score(0);
+        self.update_score(game.score);
     }
 
     fn snake(&mut self, game: &Game) {
@@ -202,21 +202,19 @@ impl GameRender for BinaryRender {
         self.replace_head(game, false);
     }
 
-    fn eat(&mut self, game: &Game, p: FieldPoint) {
-        let element = game.field[p.x][p.y];
-        match element {
-            FieldElement::Treat => self.draw_sprite_3x3(0, p),
-            _ => self.draw_sprite_8x4(0, p),
+    fn eat(&mut self, game: &Game, food: &Food) {
+        match food.shape {
+            FoodType::Basic => self.draw_sprite_3x3(0, food.location),
+            _ => self.draw_sprite_8x4(0, food.location),
         }
         self.replace_head(game, true);
         self.update_score(game.score);
     }
 
-    fn food(&mut self, game: &Game, p: FieldPoint) {
-        // self.replace_head(game);
-        let element = game.field[p.x][p.y];
-        match element {
-            FieldElement::Treat => self.draw_sprite_3x3(SpritesBinary::food(), p),
+    fn added_food(&mut self, food: &Food) {
+        let p = food.location;
+        match food.shape {
+            FoodType::Basic => self.draw_sprite_3x3(SpritesBinary::food(), p),
             x => self.draw_sprite_8x4(SpritesBinary::special_food(x), p),
         };
     }

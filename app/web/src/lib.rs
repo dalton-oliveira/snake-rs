@@ -5,7 +5,7 @@ pub mod utils;
 extern crate js_sys;
 use snake::{
     game::{Game, GameConfig},
-    types::{Direction, FieldElement},
+    types::{Direction, GameState},
 };
 use wasm_bindgen::prelude::*;
 
@@ -42,10 +42,10 @@ const CONFIG: GameConfig = GameConfig {
 impl Universe {
     pub fn new() -> Universe {
         let (width, height) = CONFIG.dim;
-        let mut render = render::BinaryRender::new(width as u32, height as u32);
+        let mut render = render::BinaryRender::new(width, height);
 
         let mut game = Game::new(&mut render, CONFIG);
-        game.add_food(FieldElement::Treat, &mut render);
+        game.add_food(&mut render);
         Universe { game, render }
     }
 
@@ -61,5 +61,8 @@ impl Universe {
 
     pub fn tick(&mut self) {
         self.game.tick(&mut self.render);
+        if self.game.state == GameState::Over {
+            log!("dead");
+        }
     }
 }
