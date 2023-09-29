@@ -14,6 +14,7 @@ macro_rules! log {
     }
 }
 
+// JavaScript bridges
 #[link(wasm_import_module = "/render/field.js")]
 extern "C" {
     fn drawSprite4x2(sprite: u8, px: u16, py: u16);
@@ -23,7 +24,8 @@ extern "C" {
 }
 #[link(wasm_import_module = "/render/panel.js")]
 extern "C" {
-    fn drawSprite3x5(sprite: u16, px: u16);
+    fn drawSprite3x5(sprite: u16, px: i16);
+    fn drawPanelSprite8x4(sprite: u32, xOffPixels: i16, yOffPixels: u16);
 }
 #[link(wasm_import_module = "/render/index.js")]
 extern "C" {
@@ -73,6 +75,18 @@ impl BinaryRender {
     }
     fn draw_sprite_8x4(&mut self, sprite: u32, p: FieldPoint) {
         unsafe { drawSprite8x4(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
+    }
+    fn draw_panel_digits(&mut self, n: u16, digits: u8, x0: i16) {
+        let score_digits = to_base_10_array(n, digits);
+        for x in 0..score_digits.len() {
+            let digit = score_digits[x];
+            unsafe { drawSprite3x5(SpritesBinary::digit(digit).reverse_bits(), x0 + x as i16) }
+        }
+    }
+    fn clear_panel_digits(&mut self, digits: u8, x0: i16) {
+        for x in 0..digits {
+            unsafe { drawSprite3x5(0, x0 + x as i16) }
+        }
     }
     fn go_to(&mut self, node: &SnakeNode) {
         self.pos = node.position.clone();
@@ -158,7 +172,7 @@ impl BinaryRender {
         if tail.direction == next_to {
             self.draw_snake_sprites(SpritesBinary::full_tail(self.to.to));
         } else {
-            // tricky but do the job
+            // tricky but does the job
             self.draw_snake_sprite(0);
             self.walk();
             self.turn(next_to);
@@ -167,11 +181,7 @@ impl BinaryRender {
         }
     }
     fn update_score(&mut self, score: u16) {
-        let score_digits = to_base_10_array(score, 4);
-        for x in 0..score_digits.len() {
-            let digit = score_digits[x];
-            unsafe { drawSprite3x5(SpritesBinary::digit(digit).reverse_bits(), x as u16) }
-        }
+        self.draw_panel_digits(score, 4, 0);
     }
 }
 
@@ -207,22 +217,33 @@ impl GameRender for BinaryRender {
         }
         self.update_tail(tail.unwrap(), next.unwrap().direction);
         self.replace_head(game, false);
+        if game.food.last_special_tick > 0 {
+            self.draw_panel_digits(game.food.last_special_tick, 2, -2);
+        }
     }
 
     fn eat(&mut self, game: &Game, food: &Food) {
         match food.shape {
             FoodType::Basic => self.draw_sprite_3x3(0, food.location),
-            _ => self.draw_sprite_8x4(0, food.location),
+            _ => self.removed_food(food),
         }
         self.replace_head(game, true);
         self.update_score(game.score);
     }
-
     fn added_food(&mut self, food: &Food) {
         let p = food.location;
         match food.shape {
             FoodType::Basic => self.draw_sprite_3x3(SpritesBinary::food(), p),
-            x => self.draw_sprite_8x4(SpritesBinary::special_food(x), p),
+            x => {
+                let sprite = SpritesBinary::special_food(x);
+                self.draw_sprite_8x4(sprite, p);
+                unsafe { drawPanelSprite8x4(sprite.reverse_bits(), -14, 2) };
+            }
         };
+    }
+    fn removed_food(&mut self, food: &Food) {
+        self.draw_sprite_8x4(0, food.location);
+        unsafe { drawPanelSprite8x4(0, -14, 2) };
+        self.clear_panel_digits(2, -2)
     }
 }

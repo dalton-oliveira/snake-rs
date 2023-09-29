@@ -78,11 +78,11 @@ impl Game {
             }
         }
     }
-
     pub fn tick(&mut self, game_render: &mut impl GameRender) {
-        match self.state {
-            GameState::Quit => return,
-            _ => self.crawl(game_render),
+        if self.state == GameState::Quit {
+            return;
         }
+        self.food.tick(game_render);
+        self.crawl(game_render);
     }
 }

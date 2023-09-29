@@ -126,6 +126,11 @@ impl GameRender for TermionRender {
         write_point(icon, &food.location, &mut self.screen);
         self.screen.flush().unwrap();
     }
+
+    fn removed_food(&mut self, food: &Food) {
+        write_point("  ", &food.location, &mut self.screen);
+        self.screen.flush().unwrap();
+    }
 }
 
 const X_OFFSET: u16 = 2;

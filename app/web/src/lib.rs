@@ -5,7 +5,7 @@ pub mod utils;
 extern crate js_sys;
 use snake::{
     game::{Game, GameConfig},
-    types::{Direction, GameState},
+    types::Direction,
 };
 use wasm_bindgen::prelude::*;
 

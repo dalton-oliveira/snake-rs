@@ -5,4 +5,5 @@ pub trait GameRender {
     fn snake(&mut self, game: &Game);
     fn eat(&mut self, game: &Game, food: &Food);
     fn added_food(&mut self, food: &Food);
+    fn removed_food(&mut self, food: &Food);
 }
