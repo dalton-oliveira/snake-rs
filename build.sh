@@ -1,6 +1,8 @@
 #! /bin/bash
 
-set -e
+#@todo build it the rust way
 
-cargo build -p snake-web --target wasm32-unknown-unknown --release
-wasm-bindgen --target web --out-dir app/web/www/wasm --no-typescript ./target/wasm32-unknown-unknown/release/snake_web.wasm
+set -e
+cargo build --release
+cargo build -p wasm-render --target wasm32-unknown-unknown --release
+wasm-bindgen --target web --out-dir wasm-render/www/wasm --no-typescript ./target/wasm32-unknown-unknown/release/wasm_render.wasm

@@ -5,7 +5,6 @@
     <title>Welcome to Rusty the snake</title>
     <style>
       body {
-        position: absolute;
         top: 0;
         left: 0;
         width: 100%;
@@ -15,10 +14,20 @@
         align-items: center;
         justify-content: center;
       }
+      div {
+        display: flex;
+        overflow: scroll;
+        width: 100%;
+      }
+      canvas {
+        width: auto;
+      }
     </style>
   </head>
   <body>
-    <canvas id="snake-canvas" width="500" , height="500"></canvas>
-    <script src="./index.js" type="module"></script>
+    <div>
+      <canvas id="snake-canvas" width="500" height="500"></canvas>
+      <script src="./index.js" type="module"></script>
+    </div>
   </body>
 </html>

@@ -1,17 +1,15 @@
 [package]
 name = "snake"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
 
 [dependencies]
 rand = "0.8.5"
-rand_pcg = "0.3.1"
 getrandom = { version = "0.2", features = ["js"] }
-thread_local = "1.1.4"
-regex = "1.5.5"
 fixedbitset = "0.4.2"
+bincode = "2.0.0-rc.3"
 
 [lib]
 crate-type = ["lib"]

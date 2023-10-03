@@ -1,26 +1,39 @@
 use std::collections::HashMap;
 
+use bincode::{config, decode_from_slice, encode_to_vec};
+
 use crate::{
     food::FoodField,
     render::GameRender,
     snake::{Snake, SnakeNode},
-    types::{Direction, Field, FoodType, GameState},
+    types::{Direction, Field, FoodType, GameConfig, GameState},
 };
 
-pub struct Game {
+#[derive(bincode::Encode, bincode::Decode, Debug)]
+pub struct GameData {
     pub config: GameConfig,
-    pub score: u16,
-    pub snakes: HashMap<usize, Snake>,
-    pub field: Field,
+    pub snakes: HashMap<u16, Snake>,
     pub food: FoodField,
     pub state: GameState,
 }
 
-pub struct GameConfig {
-    pub size: u16,
-    pub start: (u16, u16),
-    pub dim: (u16, u16),
-    pub direction: Direction,
+impl GameData {
+    pub fn from_game(game: &Game) -> GameData {
+        GameData {
+            config: game.config.clone(),
+            snakes: game.snakes.clone(),
+            food: game.food.clone(),
+            state: game.state.clone(),
+        }
+    }
+}
+
+pub struct Game {
+    pub config: GameConfig,
+    pub snakes: HashMap<u16, Snake>,
+    pub field: Field,
+    pub food: FoodField,
+    pub state: GameState,
 }
 
 impl Game {
@@ -29,7 +42,6 @@ impl Game {
         let field = Field::new(width, height);
         let game = Game {
             config,
-            score: 0,
             food: FoodField::new(),
             snakes: HashMap::new(),
             field,
@@ -38,52 +50,90 @@ impl Game {
         return game;
     }
 
-    pub fn add_snake(&mut self, game_render: &mut impl GameRender) -> usize {
-        let snake = Snake::new(&mut self.field, &self.config);
-        let id = self.snakes.len();
-        self.snakes.insert(id, snake);
+    pub fn encode_game_data(&self) -> Vec<u8> {
+        encode_to_vec(GameData::from_game(self), config::standard()).unwrap()
+    }
 
-        let snake = &self.snakes.get(&id).unwrap();
-        game_render.snake_full(&snake, &self.food);
+    pub fn set_game_data(&mut self, data: Vec<u8>) {
+        let (data, _size): (GameData, usize) =
+            decode_from_slice(&data[..], config::standard()).unwrap();
+
+        let (width, height) = data.config.dim;
+        let mut field = Field::new(width, height);
+        for (_id, snake) in data.snakes.iter() {
+            for node in snake.nodes.iter() {
+                field.set(&node.position, true);
+            }
+        }
+        self.config = data.config;
+        self.food = data.food;
+        self.snakes = data.snakes;
+        self.field = field;
+        self.state = data.state;
+    }
+
+    // @todo spot an empty continuous space to fit the snake
+    pub fn add_snake(&mut self) -> u16 {
+        let mut config = self.config.clone();
+        config.start = (0, self.snakes.len() as u16);
+
+        let id = (self.snakes.len() + 1) as u16;
+        let snake = Snake::new(&mut self.field, &config, id);
+        self.snakes.insert(id, snake);
         return id;
     }
 
-    pub fn add_food(&mut self, game_render: &mut impl GameRender) {
-        let max = self.max();
-        self.food.add_food(max, &self.field, game_render);
-    }
-
-    fn crawl(&mut self, game_render: &mut impl GameRender) {
-        let max = self.max();
-        for snake in self.snakes.values_mut() {
-            let next_head = snake.next_head();
-            let SnakeNode { position: p, .. } = next_head;
-            if self.field.filled(&p) {
-                // self.state = GameState::Over; //@todo comming soon...
-                return;
-            }
-            let nodes = &mut snake.nodes;
-            nodes.push_back(next_head);
-            self.field.set(&p, true);
-            match self.food.grab(&p, game_render) {
-                None => {
-                    let tail = nodes.pop_front().unwrap();
-                    self.field.set(&tail.position, false);
-                    game_render.crawl(&snake, &self.food);
-                }
-                Some(food) => {
-                    self.score += food.weight as u16;
-                    game_render.update_score(self.score);
-                    game_render.grow(&snake, &self.food);
-                    if food.shape == FoodType::Basic {
-                        self.food.add_food(max, &self.field, game_render);
-                    }
-                }
+    pub fn remove_snake(&mut self, snake_id: u16) {
+        //@todo clear rendering coming soon..
+        if let Some(snake) = self.snakes.remove(&snake_id) {
+            for node in snake.nodes.iter() {
+                self.field.set(&node.position, false);
             }
         }
     }
 
-    pub fn head_to(&mut self, snake_id: usize, to: Direction) {
+    pub fn add_food(&mut self) {
+        let max = self.max();
+        self.food.add_food(max, &self.field);
+    }
+
+    fn crawl(&mut self) {
+        for snake in self.snakes.values_mut() {
+            let mut next_head = snake.next_head();
+            let SnakeNode { position: p, .. } = next_head;
+            if self.field.filled(&p) {
+                // self.state = GameState::Over; //@todo comming soon...
+                continue;
+            }
+            let nodes = &mut snake.nodes;
+            self.field.set(&p, true);
+            match self.food.grab(&p) {
+                Some(food) => {
+                    next_head.stuffed = true;
+                    snake.score += food.weight as u16;
+                }
+                None => {
+                    let tail = nodes.pop_front().unwrap();
+                    self.field.set(&tail.position, false);
+                }
+            }
+            nodes.push_back(next_head);
+        }
+    }
+
+    pub fn add_missing_food(&mut self) {
+        let mut required_foods = self.snakes.len();
+        for food in self.food.foods.iter() {
+            if food.shape == FoodType::Basic && required_foods > 0 {
+                required_foods -= 1;
+            }
+        }
+        for _ in 0..required_foods {
+            self.food.add_food(self.max(), &self.field);
+        }
+    }
+
+    pub fn head_to(&mut self, snake_id: u16, to: Direction) {
         if let Some(snake) = self.snakes.get_mut(&snake_id) {
             snake.head_to(to);
         }
@@ -97,11 +147,21 @@ impl Game {
         return (self.field.bit_set.len() - max) as u16;
     }
 
-    pub fn tick(&mut self, game_render: &mut impl GameRender) {
+    pub fn draw(&mut self, render: &mut impl GameRender) {
+        // @todo use snake_id as render param
+        for (_id, snake) in self.snakes.iter() {
+            render.snake(&snake, &self.food);
+        }
+        for food in self.food.foods.iter() {
+            render.food(&food);
+        }
+    }
+
+    pub fn tick(&mut self) {
         if self.state == GameState::Quit {
             return;
         }
-        self.food.tick(game_render);
-        self.crawl(game_render);
+        self.food.tick();
+        self.crawl();
     }
 }

@@ -1,20 +1,23 @@
-use crate::{game::GameConfig, types::*};
-use std::collections::LinkedList;
+use crate::types::*;
+use std::collections::VecDeque;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(bincode::Encode, bincode::Decode, Debug, Clone, Copy)]
 pub struct SnakeNode {
     pub direction: Direction,
     pub position: FieldPoint,
+    pub stuffed: bool,
 }
 
-#[derive(Debug)]
+#[derive(bincode::Encode, bincode::Decode, Debug, Clone)]
 pub struct Snake {
-    pub nodes: LinkedList<SnakeNode>,
+    pub nodes: VecDeque<SnakeNode>,
     pub direction: WrappableDirection,
+    pub score: u16,
+    pub id: u16,
 }
 
 impl Snake {
-    pub fn new(field: &mut Field, config: &GameConfig) -> Snake {
+    pub fn new(field: &mut Field, config: &GameConfig, id: u16) -> Snake {
         let (width, height) = config.dim;
         let max = FieldPoint {
             x: width,
@@ -24,8 +27,10 @@ impl Snake {
         let start = FieldPoint { x, y };
         let to = config.direction;
         let mut snake = Snake {
-            nodes: LinkedList::new(),
+            id,
+            nodes: VecDeque::new(),
             direction: WrappableDirection { to, max },
+            score: 0,
         };
 
         snake.egg_hatch(field, start, config.size);
@@ -42,10 +47,11 @@ impl Snake {
 
     pub fn next_head(&self) -> SnakeNode {
         let head = self.nodes.back().unwrap();
-        let position = head.position.add_wrapping(self.direction);
+        let position = head.position.wrapping_add(self.direction);
         SnakeNode {
             direction: self.direction.to,
             position,
+            stuffed: false,
         }
     }
 
@@ -58,6 +64,7 @@ impl Snake {
         self.nodes.push_front(SnakeNode {
             direction: self.direction.to,
             position: location,
+            stuffed: false,
         });
         for _ in 1..size {
             let next_head = self.next_head();

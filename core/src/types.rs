@@ -1,6 +1,6 @@
 use fixedbitset::FixedBitSet;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(bincode::Encode, bincode::Decode, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FoodType {
     Basic,
     Whale,
@@ -11,9 +11,10 @@ pub enum FoodType {
     Caterpillar,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(bincode::Encode, bincode::Decode, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Food {
     size: u8,
+    pub ticks_left: u8,
     pub weight: u8,
     pub shape: FoodType,
     pub location: FieldPoint,
@@ -23,12 +24,14 @@ impl Food {
     pub fn new(shape: FoodType, p: FieldPoint) -> Food {
         return match shape {
             FoodType::Basic => Food {
+                ticks_left: 0,
                 size: 1,
                 weight: 8,
                 shape,
                 location: p.clone(),
             },
             _ => Food {
+                ticks_left: 30,
                 size: 2,
                 weight: 45,
                 shape,
@@ -45,7 +48,7 @@ impl Food {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(bincode::Encode, bincode::Decode, Debug, Clone, PartialEq, Eq)]
 pub enum GameState {
     None,
     Playing,
@@ -61,7 +64,7 @@ pub struct Field {
 }
 impl Field {
     pub fn new(width: u16, height: u16) -> Field {
-        let bit_set = FixedBitSet::with_capacity((width * height).into());
+        let bit_set = FixedBitSet::with_capacity(width as usize * height as usize);
         return Field {
             width,
             height,
@@ -89,7 +92,7 @@ impl Field {
 }
 
 #[repr(C)]
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(bincode::Encode, bincode::Decode, Debug, PartialEq, Eq, Copy, Clone)]
 pub struct FieldPoint {
     pub x: u16,
     pub y: u16,
@@ -100,7 +103,7 @@ impl FieldPoint {
         let (x, y) = (self.x + tuple.0, self.y + tuple.1);
         FieldPoint { x, y }
     }
-    pub fn add_wrapping(&self, direction: WrappableDirection) -> FieldPoint {
+    pub fn wrapping_add(&self, direction: WrappableDirection) -> FieldPoint {
         let x = match direction.to {
             Direction::Right => self.x.wrapping_add(1).wrapping_rem(direction.max.x),
             Direction::Left => self
@@ -119,10 +122,15 @@ impl FieldPoint {
         };
         FieldPoint { x, y }
     }
+    pub fn wrapping_sub(&self, direction: WrappableDirection) -> FieldPoint {
+        let mut direction = direction.clone();
+        direction.to = opposite_of(direction.to);
+        return self.wrapping_add(direction);
+    }
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(bincode::Encode, bincode::Decode, Debug, Copy, Clone, PartialEq)]
 pub enum Direction {
     Up,
     Right,
@@ -137,8 +145,27 @@ pub fn opposite_of(direction: Direction) -> Direction {
         Direction::Down => Direction::Up,
     }
 }
-#[derive(Debug, Copy, Clone)]
+#[derive(bincode::Encode, bincode::Decode, Debug, Copy, Clone)]
 pub struct WrappableDirection {
     pub to: Direction,
     pub max: FieldPoint,
+}
+
+#[derive(bincode::Encode, bincode::Decode, Clone, Debug)]
+pub struct GameConfig {
+    pub size: u16,
+    pub start: (u16, u16),
+    pub dim: (u16, u16),
+    pub direction: Direction,
+}
+
+impl Default for GameConfig {
+    fn default() -> GameConfig {
+        GameConfig {
+            size: 5,
+            start: (4, 3),
+            dim: (15, 10),
+            direction: Direction::Right,
+        }
+    }
 }

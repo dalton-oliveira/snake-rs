@@ -1,4 +1,4 @@
-import { drawSprite, clearRect, pixel } from "./screen.js";
+import { drawSprite, clearRect } from "./screen.js";
 import { BLOCK_PIXELS } from "./constants.js";
 
 /**
@@ -77,6 +77,10 @@ function reflect(n, max) {
   if (n > max) return 1;
   if (n === 0) return max - 1;
   return n;
+}
+
+export function clearField() {
+  clearRect(xOff, yOff, xMax, yMax);
 }
 
 // field params

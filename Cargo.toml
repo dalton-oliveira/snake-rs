@@ -1,8 +1,21 @@
+
 [workspace]
 members = [
     "core",
-    "app/binary-render",
-    "app/web",
-    "app/termion",
+    "wasm-render",
+    "snake-termion",
+    "snake-multiplayer",
 ]
 resolver = "1"
+
+[workspace.package]
+version = "0.2.0"
+authors = ["Dalton Oliveira <dalton.zoops@gmail.com>"]
+edition = "2021"
+rust-version = "1.73"
+description = """
+Multiplayer Snake game
+"""
+repository = "https://github.com/dalton-oliveira/snake-rs"
+readme = "./README.md"
+# license = "MIT OR Apache-2.0"

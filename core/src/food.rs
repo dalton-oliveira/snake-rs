@@ -1,9 +1,6 @@
 use rand::{seq::SliceRandom, Rng};
 
-use crate::{
-    render::GameRender,
-    types::{Field, FieldPoint, Food, FoodType},
-};
+use crate::types::{Field, FieldPoint, Food, FoodType};
 
 const BAG: [FoodType; 6] = [
     FoodType::Whale,
@@ -14,11 +11,10 @@ const BAG: [FoodType; 6] = [
     FoodType::Caterpillar,
 ];
 
+#[derive(bincode::Encode, bincode::Decode, PartialEq, Debug, Clone)]
 pub struct FoodField {
     pub foods: Vec<Food>,
     pub count: u16,
-    ticks_for_special: u16,
-    pub last_special_tick: u16,
     bag: [FoodType; BAG.len()],
 }
 
@@ -26,12 +22,11 @@ impl FoodField {
     pub fn new() -> FoodField {
         FoodField {
             foods: Vec::new(),
-            ticks_for_special: 30, // @todo move to GameConfig
-            last_special_tick: 0,
             count: 0,
             bag: BAG.clone(),
         }
     }
+
     pub fn has_at(&self, p: &FieldPoint) -> Option<usize> {
         for i in 0..self.foods.len() {
             if self.foods[i].is_at(p) {
@@ -41,31 +36,32 @@ impl FoodField {
         return None;
     }
 
-    pub fn grab(&mut self, p: &FieldPoint, game_render: &mut impl GameRender) -> Option<Food> {
+    pub fn grab(&mut self, p: &FieldPoint) -> Option<Food> {
         let i = self.has_at(p);
         if let Some(i) = i {
             let food = self.foods.remove(i);
-            game_render.removed_food(&food);
-            if food.shape != FoodType::Basic {
-                self.last_special_tick = 0;
-            }
             return Some(food);
         }
         return None;
     }
 
-    pub fn add_food(&mut self, max: u16, field: &Field, game_render: &mut impl GameRender) -> Food {
+    pub fn set_food(&mut self, food: Food) {
+        self.foods.push(food);
+        self.count += 1;
+    }
+
+    pub fn add_food(&mut self, max: u16, field: &Field) {
         self.count += 1;
         let mut nth = rand::thread_rng().gen_range(0..max - 1);
         let mut idx: u16 = 0;
 
         // finds the nth free position
         loop {
-            if !field.idx_filled(idx) {
-                nth -= 1;
-            }
             if nth == 0 {
                 break;
+            }
+            if !field.idx_filled(idx) {
+                nth -= 1;
             }
             idx += 1;
         }
@@ -76,26 +72,19 @@ impl FoodField {
         }
 
         let food = Food::new(FoodType::Basic, field.from_idx(idx));
-        self.foods.push(food);
-        game_render.added_food(&food);
+        self.set_food(food);
 
         if self.count % 6 == 0 {
-            let food = self.add_special_food(max - 1, field);
+            let food = self.random_special(max - 1, field);
             if let Some(food) = food {
-                game_render.added_food(&food);
+                self.set_food(food);
             }
         }
-
-        return food;
     }
 
     /// Special foods requires 2 slots on the field. It must be not placed on the last col,
     ///  as it can't wrap to the next row.
-    pub fn add_special_food(&mut self, max: u16, field: &Field) -> Option<Food> {
-        if self.last_special_tick > 0 {
-            return None;
-        }
-
+    pub fn random_special(&mut self, max: u16, field: &Field) -> Option<Food> {
         let mut rng = rand::thread_rng();
         let max = max / 2 - (self.foods.len() * 2) as u16;
         let mut nth = rng.gen_range(0..max - 1);
@@ -103,11 +92,11 @@ impl FoodField {
         // make sure each idx doesn't land on the last col
         let mut idx: u16 = field.width % 2;
         loop {
-            if !field.idx_filled(idx) && !field.idx_filled(idx + 1) {
-                nth -= 1;
-            }
             if nth == 0 {
                 break;
+            }
+            if !field.idx_filled(idx) && !field.idx_filled(idx + 1) {
+                nth -= 1;
             }
             idx += 2;
         }
@@ -119,26 +108,18 @@ impl FoodField {
 
         self.bag.shuffle(&mut rng);
         let food = Food::new(self.bag[0], field.from_idx(idx));
-        self.foods.push(food);
-        self.count += 1;
-        self.last_special_tick = self.ticks_for_special;
         return Some(food);
     }
 
-    pub fn tick(&mut self, game_render: &mut impl GameRender) {
-        if self.last_special_tick == 1 {
-            let mut idx = 0;
-            for i in 0..self.foods.len() {
-                if self.foods[i].shape != FoodType::Basic {
-                    idx = i;
-                    break;
-                }
+    pub fn tick(&mut self) {
+        self.foods.retain_mut(|food| {
+            if food.ticks_left == 1 {
+                return false;
             }
-            let food = self.foods.remove(idx);
-            game_render.removed_food(&food);
-        }
-        if self.last_special_tick > 0 {
-            self.last_special_tick -= 1;
-        }
+            if food.ticks_left > 1 {
+                food.ticks_left -= 1;
+            }
+            return true;
+        });
     }
 }

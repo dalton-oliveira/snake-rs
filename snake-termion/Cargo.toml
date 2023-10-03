@@ -1,0 +1,10 @@
+[package]
+name = "snake-termion"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+
+[dependencies]
+snake = { path = "../core" }
+termion = "2.0.1"

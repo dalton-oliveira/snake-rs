@@ -1,15 +1,10 @@
-import {
-  SPACING,
-  PIXEL_W,
-  PIXEL_H,
-  // PANEL_HEIGHT,
-} from "./render/screen.js";
+import { SPACING, PIXEL_W, PIXEL_H } from "./screen.js";
 import {
   PANEL_HEIGHT,
   PIXEL_X_OFFSET,
   PIXEL_Y_OFFSET,
   BLOCK_PIXELS,
-} from "./render/constants.js";
+} from "./constants.js";
 
 const canvas = document.getElementById("snake-canvas");
 const ctx = canvas.getContext("2d");

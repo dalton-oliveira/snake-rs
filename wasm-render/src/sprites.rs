@@ -1,8 +1,8 @@
 use snake::types::{Direction, FoodType};
 
-pub struct SpritesBinary {}
+pub struct Sprites {}
 
-impl SpritesBinary {
+impl Sprites {
     pub fn food() -> u8 {
         return 0b010_101_01;
     }
@@ -10,7 +10,7 @@ impl SpritesBinary {
         match element {
             FoodType::Whale => 0b00001100_10011010_10111110_01111111,
             FoodType::Turtle => 0b11000100_11001110_00111111_00001010,
-            FoodType::Alien => 0b01010100_11111111_10111101_10100101,
+            FoodType::Alien => 0b00111100_11111111_10111101_10100101,
             FoodType::Chameleon => 0b01010100_10111110_11111111_00100100,
             FoodType::Elephant => 0b00011000_00101101_01111111_00011110,
             FoodType::Caterpillar => 0b00000000_10000000_11111111_01010101,
@@ -42,7 +42,7 @@ impl SpritesBinary {
     }
 
     pub fn full_head(from: Direction, open: bool) -> [u8; 2] {
-        return [SpritesBinary::eyes(from), SpritesBinary::mouth(from, open)];
+        return [Sprites::mouth(from, open), Sprites::eyes(from)];
     }
     pub fn dash_with_food(sprite: u8, direction: Direction) -> u8 {
         match direction {
@@ -51,23 +51,17 @@ impl SpritesBinary {
         }
     }
     pub fn full_node(from: Direction, to: Direction, has_food: bool) -> [u8; 2] {
-        let sprites = [SpritesBinary::block(from), SpritesBinary::corner(from, to)];
+        let sprites = [Sprites::corner(from, to), Sprites::block(from)];
         if has_food == false {
             return sprites;
         }
         if from == to {
-            return [sprites[0], SpritesBinary::dash_with_food(sprites[1], from)];
+            return [Sprites::dash_with_food(sprites[0], from), sprites[1]];
         }
-        return [
-            SpritesBinary::block_with_food(from, to, sprites[0]),
-            sprites[1],
-        ];
+        return [sprites[0], Sprites::block_with_food(from, to, sprites[1])];
     }
     pub fn full_tail(direction: Direction) -> [u8; 2] {
-        return [
-            SpritesBinary::dot(direction),
-            SpritesBinary::tail(direction),
-        ];
+        return [Sprites::tail(direction), Sprites::dot(direction)];
     }
 
     pub fn tail(direction: Direction) -> u8 {
@@ -104,8 +98,8 @@ impl SpritesBinary {
     }
     pub fn mouth(direction: Direction, mouth_open: bool) -> u8 {
         return match mouth_open {
-            true => SpritesBinary::mouth_open(direction),
-            false => SpritesBinary::block(direction),
+            true => Sprites::mouth_open(direction),
+            false => Sprites::block(direction),
         };
     }
     pub fn dot(direction: Direction) -> u8 {
@@ -117,8 +111,8 @@ impl SpritesBinary {
         };
     }
     pub fn corner(from: Direction, to: Direction) -> u8 {
-        let dash = SpritesBinary::dash(from);
-        let back_dash = SpritesBinary::back_dash(from);
+        let dash = Sprites::dash(to);
+        let back_dash = Sprites::back_dash(to);
         match (from, to) {
             (Direction::Right, Direction::Up) => dash,
             (Direction::Left, Direction::Down) => dash,
@@ -128,7 +122,7 @@ impl SpritesBinary {
             (Direction::Left, Direction::Up) => back_dash,
             (Direction::Down, Direction::Right) => back_dash,
             (Direction::Up, Direction::Left) => back_dash,
-            (direction, _) => SpritesBinary::node_dash(direction), // not a corner
+            (direction, _) => Sprites::node_dash(direction), // not a corner
         }
     }
 
@@ -148,8 +142,8 @@ impl SpritesBinary {
     }
     pub fn node_dash(direction: Direction) -> u8 {
         return match direction {
-            Direction::Down | Direction::Right => SpritesBinary::back_dash(direction),
-            Direction::Up | Direction::Left => SpritesBinary::dash(direction),
+            Direction::Down | Direction::Right => Sprites::back_dash(direction),
+            Direction::Up | Direction::Left => Sprites::dash(direction),
         };
     }
 }

@@ -1,9 +1,9 @@
+use crate::types::Screen;
 use snake::types::FieldPoint;
-use snake_binary_render::types::Screen;
 
-pub struct LocalScreen {}
+pub struct CanvasScreen {}
 
-impl Screen for LocalScreen {
+impl Screen for CanvasScreen {
     fn setup(&self, width: u16, height: u16) {
         unsafe { setup(width, height) };
     }
@@ -14,10 +14,10 @@ impl Screen for LocalScreen {
         unsafe { drawSprite2x4(sprite.reverse_bits(), p.x, p.y) };
     }
     fn field_sprite_3x3(&self, sprite: u8, p: &FieldPoint) {
-        unsafe { drawSprite3x3(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
+        unsafe { drawSprite3x3(sprite.reverse_bits(), p.x, p.y) };
     }
     fn field_sprite_8x4(&self, sprite: u32, p: &FieldPoint) {
-        unsafe { drawSprite8x4(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
+        unsafe { drawSprite8x4(sprite.reverse_bits(), p.x, p.y) };
     }
     fn panel_sprite_3x5(&self, sprite: u16, px: i16) {
         unsafe { drawPanelSprite3x5(sprite.reverse_bits(), px) };
@@ -28,19 +28,19 @@ impl Screen for LocalScreen {
 }
 
 // JavaScript bridges
-#[link(wasm_import_module = "/render/field.js")]
+#[link(wasm_import_module = "/canvas/field.js")]
 extern "C" {
     fn drawSprite4x2(sprite: u8, px: u16, py: u16);
     fn drawSprite2x4(sprite: u8, px: u16, py: u16);
     fn drawSprite3x3(sprite: u8, px: u16, py: u16);
     fn drawSprite8x4(sprite: u32, px: u16, py: u16);
 }
-#[link(wasm_import_module = "/render/panel.js")]
+#[link(wasm_import_module = "/canvas/panel.js")]
 extern "C" {
     fn drawPanelSprite3x5(sprite: u16, px: i16);
     fn drawPanelSprite8x4(sprite: u32, xOffPixels: i16, yOffPixels: u16);
 }
-#[link(wasm_import_module = "/render/index.js")]
+#[link(wasm_import_module = "/canvas/index.js")]
 extern "C" {
     fn setup(width: u16, height: u16);
 }
