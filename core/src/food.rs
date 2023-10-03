@@ -32,30 +32,31 @@ impl FoodField {
             bag: BAG.clone(),
         }
     }
-    pub fn has_at(&self, p: &FieldPoint) -> bool {
+    pub fn has_at(&self, p: &FieldPoint) -> Option<usize> {
         for i in 0..self.foods.len() {
             if self.foods[i].is_at(p) {
-                return true;
-            }
-        }
-        return false;
-    }
-    pub fn grab(&mut self, p: &FieldPoint) -> Option<Food> {
-        for i in 0..self.foods.len() {
-            if self.foods[i].is_at(p) {
-                let food = self.foods.remove(i);
-                if food.shape != FoodType::Basic {
-                    self.last_special_tick = 0;
-                }
-                return Some(food);
+                return Some(i);
             }
         }
         return None;
     }
 
-    pub fn add_food(&mut self, max: u16, field: &Field) -> Food {
+    pub fn grab(&mut self, p: &FieldPoint, game_render: &mut impl GameRender) -> Option<Food> {
+        let i = self.has_at(p);
+        if let Some(i) = i {
+            let food = self.foods.remove(i);
+            game_render.removed_food(&food);
+            if food.shape != FoodType::Basic {
+                self.last_special_tick = 0;
+            }
+            return Some(food);
+        }
+        return None;
+    }
+
+    pub fn add_food(&mut self, max: u16, field: &Field, game_render: &mut impl GameRender) -> Food {
         self.count += 1;
-        let mut nth = rand::thread_rng().gen_range(0..max - self.foods.len() as u16 - 1);
+        let mut nth = rand::thread_rng().gen_range(0..max - 1);
         let mut idx: u16 = 0;
 
         // finds the nth free position
@@ -70,12 +71,20 @@ impl FoodField {
         }
 
         // won't overlap with current food
-        while self.has_at(&field.from_idx(idx)) || field.idx_filled(idx) {
+        while self.has_at(&field.from_idx(idx)).is_some() || field.idx_filled(idx) {
             idx = (idx + 1) % field.bit_set.len() as u16;
         }
 
         let food = Food::new(FoodType::Basic, field.from_idx(idx));
         self.foods.push(food);
+        game_render.added_food(&food);
+
+        if self.count % 6 == 0 {
+            let food = self.add_special_food(max - 1, field);
+            if let Some(food) = food {
+                game_render.added_food(&food);
+            }
+        }
 
         return food;
     }

@@ -1,7 +1,7 @@
 use snake::{
-    game::Game,
+    food::FoodField,
     render::GameRender,
-    snake::SnakeNode,
+    snake::{Snake, SnakeNode},
     types::{opposite_of, Direction, FieldPoint, Food, FoodType, WrappableDirection},
 };
 
@@ -37,6 +37,75 @@ pub struct BinaryRender {
     head: Option<SnakeNode>,
     pos: FieldPoint,
     to: WrappableDirection,
+}
+
+impl GameRender for BinaryRender {
+    fn snake_full(&mut self, snake: &Snake, food_field: &FoodField) {
+        let mut iter = snake.nodes.iter();
+
+        if let Some(tail) = iter.next() {
+            self.update_tail(tail, tail.direction);
+        } else {
+            return;
+        }
+        let node = iter.next();
+        if node.is_none() {
+            return;
+        }
+        let mut node = node.unwrap();
+        while let Some(next) = iter.next() {
+            self.walk();
+            self.node(node, next, false);
+            node = &next;
+        }
+
+        self.draw_head(snake, food_field);
+        self.update_score(0);
+    }
+
+    fn crawl(&mut self, snake: &Snake, food_field: &FoodField) {
+        let mut iter = snake.nodes.iter();
+        let (tail, next) = (iter.next(), iter.next());
+        if tail.is_none() || next.is_none() {
+            return;
+        }
+        self.update_tail(tail.unwrap(), next.unwrap().direction);
+        self.replace_head(snake, food_field, false);
+        if food_field.last_special_tick > 0 {
+            self.draw_panel_digits(food_field.last_special_tick, 2, -2);
+        }
+    }
+
+    fn grow(&mut self, snake: &Snake, food_field: &FoodField) {
+        self.replace_head(snake, food_field, true);
+    }
+
+    fn added_food(&mut self, food: &Food) {
+        let p = food.location;
+        match food.shape {
+            FoodType::Basic => self.draw_sprite_3x3(SpritesBinary::food(), p),
+            x => {
+                let sprite = SpritesBinary::special_food(x);
+                self.draw_sprite_8x4(sprite, p);
+                unsafe { drawPanelSprite8x4(sprite.reverse_bits(), -14, 2) };
+            }
+        };
+    }
+
+    fn removed_food(&mut self, food: &Food) {
+        match food.shape {
+            FoodType::Basic => self.draw_sprite_3x3(0, food.location),
+            _ => {
+                self.draw_sprite_8x4(0, food.location);
+                unsafe { drawPanelSprite8x4(0, -14, 2) };
+                self.clear_panel_digits(2, -2)
+            }
+        }
+    }
+
+    fn update_score(&mut self, score: u16) {
+        self.draw_panel_digits(score, 4, 0);
+    }
 }
 
 impl BinaryRender {
@@ -122,23 +191,24 @@ impl BinaryRender {
         let sprites = SpritesBinary::full_node(node.direction, next.direction, has_food);
         self.draw_snake_sprites(sprites);
     }
-    pub fn draw_head(&mut self, head: &SnakeNode, game: &Game) {
-        let next_position = game.snake.next_head().position;
-        let open = game.food.has_at(&next_position);
+    pub fn draw_head(&mut self, snake: &Snake, food_field: &FoodField) {
+        let head = snake.nodes.back().unwrap();
+        let next_position = snake.next_head().position;
+        let open = food_field.has_at(&next_position).is_some();
         self.turn(head.direction);
         self.walk();
         self.save_head();
         self.draw_snake_sprites(SpritesBinary::full_head(head.direction, open));
     }
-    fn replace_head(&mut self, game: &Game, has_food: bool) {
+    fn replace_head(&mut self, snake: &Snake, food_field: &FoodField, has_food: bool) {
         if let Some(prev) = self.head {
             self.go_to(&prev);
         }
-        let mut iter = game.snake.nodes.iter();
+        let mut iter = snake.nodes.iter();
         let (head, neck) = (iter.next_back().unwrap(), iter.next_back().unwrap());
 
         self.node(neck, head, has_food);
-        self.draw_head(head, game);
+        self.draw_head(snake, food_field);
     }
     fn clear_tail(&mut self) {
         if let Some(tail) = self.tail {
@@ -179,71 +249,5 @@ impl BinaryRender {
             self.step_back();
             self.draw_snake_sprites(SpritesBinary::full_tail(next_to));
         }
-    }
-    fn update_score(&mut self, score: u16) {
-        self.draw_panel_digits(score, 4, 0);
-    }
-}
-
-impl GameRender for BinaryRender {
-    fn snake_full(&mut self, game: &Game) {
-        let mut iter = game.snake.nodes.iter();
-
-        if let Some(tail) = iter.next() {
-            self.update_tail(tail, tail.direction);
-        } else {
-            return;
-        }
-        let node = iter.next();
-        if node.is_none() {
-            return;
-        }
-        let mut node = node.unwrap();
-        while let Some(next) = iter.next() {
-            self.walk();
-            self.node(node, next, false);
-            node = &next;
-        }
-
-        self.draw_head(node, game);
-        self.update_score(game.score);
-    }
-
-    fn snake(&mut self, game: &Game) {
-        let mut iter = game.snake.nodes.iter();
-        let (tail, next) = (iter.next(), iter.next());
-        if tail.is_none() || next.is_none() {
-            return;
-        }
-        self.update_tail(tail.unwrap(), next.unwrap().direction);
-        self.replace_head(game, false);
-        if game.food.last_special_tick > 0 {
-            self.draw_panel_digits(game.food.last_special_tick, 2, -2);
-        }
-    }
-
-    fn eat(&mut self, game: &Game, food: &Food) {
-        match food.shape {
-            FoodType::Basic => self.draw_sprite_3x3(0, food.location),
-            _ => self.removed_food(food),
-        }
-        self.replace_head(game, true);
-        self.update_score(game.score);
-    }
-    fn added_food(&mut self, food: &Food) {
-        let p = food.location;
-        match food.shape {
-            FoodType::Basic => self.draw_sprite_3x3(SpritesBinary::food(), p),
-            x => {
-                let sprite = SpritesBinary::special_food(x);
-                self.draw_sprite_8x4(sprite, p);
-                unsafe { drawPanelSprite8x4(sprite.reverse_bits(), -14, 2) };
-            }
-        };
-    }
-    fn removed_food(&mut self, food: &Food) {
-        self.draw_sprite_8x4(0, food.location);
-        unsafe { drawPanelSprite8x4(0, -14, 2) };
-        self.clear_panel_digits(2, -2)
     }
 }

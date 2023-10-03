@@ -30,6 +30,7 @@ pub enum FrontKey {
 pub struct Universe {
     game: Game,
     render: render::BinaryRender,
+    snake_id: usize,
 }
 const CONFIG: GameConfig = GameConfig {
     size: 5,
@@ -44,18 +45,23 @@ impl Universe {
         let (width, height) = CONFIG.dim;
         let mut render = render::BinaryRender::new(width, height);
 
-        let mut game = Game::new(&mut render, CONFIG);
+        let mut game = Game::new(CONFIG);
+        let snake_id = game.add_snake(&mut render);
         game.add_food(&mut render);
-        Universe { game, render }
+        Universe {
+            game,
+            render,
+            snake_id,
+        }
     }
 
-    pub fn key_down(&mut self, to: FrontKey) -> bool {
-        let snake = &mut self.game.snake;
-        return match to {
-            FrontKey::Up => snake.head_to(Direction::Up),
-            FrontKey::Down => snake.head_to(Direction::Down),
-            FrontKey::Left => snake.head_to(Direction::Left),
-            FrontKey::Right => snake.head_to(Direction::Right),
+    pub fn key_down(&mut self, to: FrontKey) {
+        let game = &mut self.game;
+        match to {
+            FrontKey::Up => game.head_to(self.snake_id, Direction::Up),
+            FrontKey::Down => game.head_to(self.snake_id, Direction::Down),
+            FrontKey::Left => game.head_to(self.snake_id, Direction::Left),
+            FrontKey::Right => game.head_to(self.snake_id, Direction::Right),
         };
     }
 

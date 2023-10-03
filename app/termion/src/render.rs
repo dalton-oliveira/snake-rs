@@ -1,7 +1,7 @@
 use std::io::{stdout, Stdout, Write};
 
 use snake::{
-    game::Game,
+    food::FoodField,
     render::GameRender,
     snake::{Snake, SnakeNode},
     types::{Direction, FieldPoint, Food, FoodType},
@@ -14,6 +14,53 @@ use termion::{
 pub struct TermionRender {
     screen: AlternateScreen<RawTerminal<Stdout>>,
     tail: Option<SnakeNode>,
+}
+
+impl GameRender for TermionRender {
+    fn snake_full(&mut self, snake: &Snake, _: &FoodField) {
+        let nodes = &snake.nodes;
+        let mut iter = nodes.iter();
+        let tail = iter.next().unwrap();
+
+        self.save_tail(tail.clone());
+        write(TermionRender::snake_tail(&tail), &tail, &mut self.screen);
+
+        for _i in 1..nodes.len() - 1 {
+            write("*", &iter.next().unwrap(), &mut self.screen);
+        }
+        let head = iter.next().unwrap();
+        write(TermionRender::snake_mounth(&head), &head, &mut self.screen);
+        self.screen.flush().unwrap();
+    }
+
+    fn crawl(&mut self, snake: &Snake, food_field: &FoodField) {
+        self.replace_tail(snake);
+        self.replace_head(snake, food_field);
+        self.screen.flush().unwrap();
+    }
+
+    fn grow(&mut self, snake: &Snake, food_field: &FoodField) {
+        self.replace_head(snake, food_field);
+        self.screen.flush().unwrap();
+    }
+
+    fn added_food(&mut self, food: &Food) {
+        let icon = match food.shape {
+            FoodType::Basic => "@",
+            _ => ":)",
+        };
+        write_point(icon, &food.location, &mut self.screen);
+        self.screen.flush().unwrap();
+    }
+
+    fn removed_food(&mut self, food: &Food) {
+        write_point("  ", &food.location, &mut self.screen);
+        self.screen.flush().unwrap();
+    }
+
+    fn update_score(&mut self, _score: u16) {
+        // coming soon...
+    }
 }
 
 impl TermionRender {
@@ -73,63 +120,17 @@ impl TermionRender {
 
         write(TermionRender::snake_tail(&tail), &tail, &mut self.screen);
     }
-    fn replace_head(&mut self, game: &Game) {
-        let next_position = game.snake.next_head().position;
-        let mut iter = game.snake.nodes.iter();
+    fn replace_head(&mut self, snake: &Snake, food_field: &FoodField) {
+        let next_position = snake.next_head().position;
+        let mut iter = snake.nodes.iter();
         let (head, neck) = (iter.next_back().unwrap(), iter.next_back().unwrap());
-        let food_ahead = game.food.has_at(&next_position);
+        let food_ahead = food_field.has_at(&next_position);
         let sprite = match food_ahead {
-            true => TermionRender::snake_mounth_treat(&head),
-            false => TermionRender::snake_mounth(&head),
+            Some(_) => TermionRender::snake_mounth_treat(&head),
+            None => TermionRender::snake_mounth(&head),
         };
         write(sprite, &head, &mut self.screen);
         write("*", neck, &mut self.screen);
-    }
-}
-
-impl GameRender for TermionRender {
-    fn snake_full(&mut self, game: &Game) {
-        let nodes = &game.snake.nodes;
-        let mut iter = nodes.iter();
-        let tail = iter.next().unwrap();
-
-        self.save_tail(tail.clone());
-        write(TermionRender::snake_tail(&tail), &tail, &mut self.screen);
-
-        for _i in 1..nodes.len() - 1 {
-            write("*", &iter.next().unwrap(), &mut self.screen);
-        }
-        let head = iter.next().unwrap();
-        write(TermionRender::snake_mounth(&head), &head, &mut self.screen);
-        self.screen.flush().unwrap();
-    }
-
-    fn snake(&mut self, game: &Game) {
-        self.replace_tail(&game.snake);
-        self.replace_head(game);
-        self.screen.flush().unwrap();
-    }
-    fn eat(&mut self, game: &Game, food: &Food) {
-        let clear = match food.shape {
-            FoodType::Basic => " ",
-            _ => "  ",
-        };
-        write_point(clear, &food.location, &mut self.screen);
-        self.replace_head(game);
-        self.screen.flush().unwrap();
-    }
-    fn added_food(&mut self, food: &Food) {
-        let icon = match food.shape {
-            FoodType::Basic => "@",
-            _ => ":)",
-        };
-        write_point(icon, &food.location, &mut self.screen);
-        self.screen.flush().unwrap();
-    }
-
-    fn removed_food(&mut self, food: &Food) {
-        write_point("  ", &food.location, &mut self.screen);
-        self.screen.flush().unwrap();
     }
 }
 

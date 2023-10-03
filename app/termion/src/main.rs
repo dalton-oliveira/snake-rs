@@ -16,13 +16,17 @@ const CONFIG: GameConfig = GameConfig {
 
 fn main() {
     let mut game_render = TermionRender::new();
-    let game = Game::new(&mut game_render, CONFIG);
+    let game = Game::new(CONFIG);
 
     let game_arc = Arc::new(RwLock::new(game));
     let mut handles = vec![];
 
     let game = game_arc.clone();
-    handles.push(thread::spawn(move || input::read(game)));
+    let snake_id = game
+        .write()
+        .expect("can't add snake")
+        .add_snake(&mut game_render);
+    handles.push(thread::spawn(move || input::read(game, snake_id)));
 
     let game = game_arc.clone();
     handles.push(thread::spawn(move || ticker::run(game, &mut game_render)));
