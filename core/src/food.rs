@@ -97,8 +97,8 @@ impl FoodField {
         }
 
         let mut rng = rand::thread_rng();
-        let max = max / 2 - (self.foods.len() * 2) as u16 - 1;
-        let mut nth = rng.gen_range(0..max);
+        let max = max / 2 - (self.foods.len() * 2) as u16;
+        let mut nth = rng.gen_range(0..max - 1);
 
         // make sure each idx doesn't land on the last col
         let mut idx: u16 = field.width % 2;
