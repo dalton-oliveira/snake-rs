@@ -1,8 +1,6 @@
-pub mod render;
 pub mod screen;
-mod sprites;
-pub mod types;
 pub mod utils;
+use snake_binary_render::render::BinaryRender;
 
 extern crate js_sys;
 use snake::{
@@ -33,7 +31,7 @@ pub enum FrontKey {
 #[wasm_bindgen]
 pub struct Universe {
     game: Game,
-    render: render::BinaryRender,
+    render: BinaryRender,
     snake_id: usize,
 }
 const CONFIG: GameConfig = GameConfig {
@@ -48,7 +46,7 @@ impl Universe {
     pub fn new() -> Universe {
         let (width, height) = CONFIG.dim;
         let screen = LocalScreen {};
-        let mut render = render::BinaryRender::new(width, height, screen);
+        let mut render = BinaryRender::new(width, height, screen);
 
         let mut game = Game::new(CONFIG);
         let snake_id = game.add_snake(&mut render);

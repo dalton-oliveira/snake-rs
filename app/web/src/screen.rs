@@ -1,6 +1,6 @@
 use snake::types::FieldPoint;
+use snake_binary_render::types::Screen;
 
-use crate::types::Screen;
 pub struct LocalScreen {}
 
 impl Screen for LocalScreen {

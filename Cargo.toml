@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "core",
+    "app/binary-render",
     "app/web",
     "app/termion",
 ]

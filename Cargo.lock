@@ -218,11 +218,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "snake-binary-render"
+version = "0.1.0"
+dependencies = [
+ "snake",
+]
+
+[[package]]
 name = "snake-web"
 version = "0.1.0"
 dependencies = [
  "js-sys",
  "snake",
+ "snake-binary-render",
  "wasm-bindgen",
  "web-sys",
 ]
