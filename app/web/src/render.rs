@@ -5,7 +5,7 @@ use snake::{
     types::{opposite_of, Direction, FieldPoint, Food, FoodType, WrappableDirection},
 };
 
-use crate::{sprites::SpritesBinary, utils::to_base_10_array};
+use crate::{sprites::SpritesBinary, types::Screen, utils::to_base_10_array};
 
 #[allow(unused_macros)]
 macro_rules! log {
@@ -14,29 +14,12 @@ macro_rules! log {
     }
 }
 
-// JavaScript bridges
-#[link(wasm_import_module = "/render/field.js")]
-extern "C" {
-    fn drawSprite4x2(sprite: u8, px: u16, py: u16);
-    fn drawSprite2x4(sprite: u8, px: u16, py: u16);
-    fn drawSprite3x3(sprite: u8, px: u16, py: u16);
-    fn drawSprite8x4(sprite: u32, px: u16, py: u16);
-}
-#[link(wasm_import_module = "/render/panel.js")]
-extern "C" {
-    fn drawSprite3x5(sprite: u16, px: i16);
-    fn drawPanelSprite8x4(sprite: u32, xOffPixels: i16, yOffPixels: u16);
-}
-#[link(wasm_import_module = "/render/index.js")]
-extern "C" {
-    fn setup(width: u16, height: u16);
-}
-
 pub struct BinaryRender {
     tail: Option<SnakeNode>,
     head: Option<SnakeNode>,
     pos: FieldPoint,
     to: WrappableDirection,
+    screen: Box<dyn Screen>,
 }
 
 impl GameRender for BinaryRender {
@@ -83,21 +66,21 @@ impl GameRender for BinaryRender {
     fn added_food(&mut self, food: &Food) {
         let p = food.location;
         match food.shape {
-            FoodType::Basic => self.draw_sprite_3x3(SpritesBinary::food(), p),
+            FoodType::Basic => self.screen.field_sprite_3x3(SpritesBinary::food(), &p),
             x => {
                 let sprite = SpritesBinary::special_food(x);
-                self.draw_sprite_8x4(sprite, p);
-                unsafe { drawPanelSprite8x4(sprite.reverse_bits(), -14, 2) };
+                self.screen.field_sprite_8x4(sprite, &p);
+                self.screen.panel_sprite_8x4(sprite, -14, 2);
             }
         };
     }
 
     fn removed_food(&mut self, food: &Food) {
         match food.shape {
-            FoodType::Basic => self.draw_sprite_3x3(0, food.location),
+            FoodType::Basic => self.screen.field_sprite_3x3(0, &food.location),
             _ => {
-                self.draw_sprite_8x4(0, food.location);
-                unsafe { drawPanelSprite8x4(0, -14, 2) };
+                self.screen.field_sprite_8x4(0, &food.location);
+                self.screen.panel_sprite_8x4(0, -14, 2);
                 self.clear_panel_digits(2, -2)
             }
         }
@@ -109,15 +92,17 @@ impl GameRender for BinaryRender {
 }
 
 impl BinaryRender {
-    pub fn new(width: u16, height: u16) -> BinaryRender {
+    // @todo understand the  + 'static
+    pub fn new(width: u16, height: u16, screen: impl Screen + 'static) -> BinaryRender {
         let max = FieldPoint {
             x: width * 2,
             y: height * 2,
         };
-        unsafe { setup(max.x, max.y) };
+        screen.setup(max.x, max.y);
         let to = Direction::Right;
         let to = WrappableDirection { max, to };
         BinaryRender {
+            screen: Box::new(screen),
             pos: max,
             to,
             tail: None,
@@ -126,12 +111,9 @@ impl BinaryRender {
     }
     fn draw_snake_sprite(&mut self, sprite: u8) {
         let p = self.pos;
-        let sprite = sprite.reverse_bits();
-        unsafe {
-            match self.to.to {
-                Direction::Left | Direction::Right => drawSprite2x4(sprite, p.x, p.y),
-                Direction::Up | Direction::Down => drawSprite4x2(sprite, p.x, p.y),
-            }
+        match self.to.to {
+            Direction::Left | Direction::Right => self.screen.field_sprite_2x4(sprite, &p),
+            Direction::Up | Direction::Down => self.screen.field_sprite_4x2(sprite, &p),
         }
     }
     fn draw_snake_sprites(&mut self, sprites: [u8; 2]) {
@@ -139,22 +121,17 @@ impl BinaryRender {
         self.walk();
         self.draw_snake_sprite(sprites[1]);
     }
-    fn draw_sprite_3x3(&mut self, sprite: u8, p: FieldPoint) {
-        unsafe { drawSprite3x3(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
-    }
-    fn draw_sprite_8x4(&mut self, sprite: u32, p: FieldPoint) {
-        unsafe { drawSprite8x4(sprite.reverse_bits(), p.x * 2 + 1, p.y * 2 + 1) };
-    }
     fn draw_panel_digits(&mut self, n: u16, digits: u8, x0: i16) {
         let score_digits = to_base_10_array(n, digits);
         for x in 0..score_digits.len() {
             let digit = score_digits[x];
-            unsafe { drawSprite3x5(SpritesBinary::digit(digit).reverse_bits(), x0 + x as i16) }
+            let sprite = SpritesBinary::digit(digit);
+            self.screen.panel_sprite_3x5(sprite, x0 + x as i16);
         }
     }
     fn clear_panel_digits(&mut self, digits: u8, x0: i16) {
         for x in 0..digits {
-            unsafe { drawSprite3x5(0, x0 + x as i16) }
+            self.screen.panel_sprite_3x5(0, x0 + x as i16);
         }
     }
     fn go_to(&mut self, node: &SnakeNode) {

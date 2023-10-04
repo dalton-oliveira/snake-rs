@@ -1,5 +1,7 @@
 pub mod render;
+pub mod screen;
 mod sprites;
+pub mod types;
 pub mod utils;
 
 extern crate js_sys;
@@ -8,6 +10,8 @@ use snake::{
     types::Direction,
 };
 use wasm_bindgen::prelude::*;
+
+use crate::screen::LocalScreen;
 
 extern crate web_sys;
 
@@ -43,7 +47,8 @@ const CONFIG: GameConfig = GameConfig {
 impl Universe {
     pub fn new() -> Universe {
         let (width, height) = CONFIG.dim;
-        let mut render = render::BinaryRender::new(width, height);
+        let screen = LocalScreen {};
+        let mut render = render::BinaryRender::new(width, height, screen);
 
         let mut game = Game::new(CONFIG);
         let snake_id = game.add_snake(&mut render);
