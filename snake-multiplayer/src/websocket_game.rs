@@ -63,33 +63,31 @@ impl WsGame {
         let game = Arc::clone(&self.game);
         let fut = async move {
             users.write().await.insert(snake_id, tx);
-            let fut = async move {
+            let notify = async move {
                 WsGame::notify_snake_id(Arc::clone(&users), snake_id).await;
             };
-            tokio::task::spawn(fut);
+            tokio::task::spawn(notify);
 
             let direction_arc = Arc::clone(RwLock::read(&directions).await.get(&snake_id).unwrap());
             let mut direction = direction_arc.read().await.clone();
             while let Some(result) = user_ws_rx.next().await {
                 match result {
                     Ok(msg) => {
-                        // @todo key buffer ?
-                        if let Ok(msg) = msg.to_str() {
-                            let next_direction = match msg {
-                                "KeyI" => Some(Direction::Up),
-                                "KeyJ" => Some(Direction::Left),
-                                "KeyK" => Some(Direction::Down),
-                                "KeyL" => Some(Direction::Right),
-                                _ => None,
-                            };
-                            if let Some(next_direction) = next_direction {
-                                if direction == next_direction {
-                                    continue;
-                                }
-                                let mut d = direction_arc.write().await;
-                                *d = next_direction;
-                                direction = next_direction;
+                        // @todo should it buffer last `n` moves ?
+                        let next_direction = match msg.as_bytes() {
+                            [0] => Some(Direction::Left),
+                            [1] => Some(Direction::Up),
+                            [2] => Some(Direction::Right),
+                            [3] => Some(Direction::Down),
+                            _ => None,
+                        };
+                        if let Some(next_direction) = next_direction {
+                            if direction == next_direction {
+                                continue;
                             }
+                            let mut d = direction_arc.write().await;
+                            *d = next_direction;
+                            direction = next_direction;
                         }
                     }
                     Err(_e) => {

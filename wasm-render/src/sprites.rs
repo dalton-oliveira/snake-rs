@@ -129,7 +129,7 @@ impl Sprites {
     pub fn block_with_food(from: Direction, to: Direction, sprite: u8) -> u8 {
         let mask = match (from, to) {
             (Direction::Right, Direction::Up) => 0b0100_0000,
-            (Direction::Left, Direction::Down) => 0b1000_0000,
+            (Direction::Left, Direction::Down) => 0b0000_0010,
             (Direction::Down, Direction::Left) => 0b0000_1000,
             (Direction::Up, Direction::Right) => 0b0001_0000,
             (Direction::Right, Direction::Down) => 0b0000_0001,
