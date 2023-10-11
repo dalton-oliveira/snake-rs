@@ -39,7 +39,6 @@ impl GameScene {
     pub fn snake_id(&mut self, data: Vec<u8>) {
         let (snake_id, _size): (u16, usize) =
             decode_from_slice(&data[..], config::standard()).unwrap();
-        log!("{snake_id}");
         self.snake_id = Some(snake_id);
     }
 

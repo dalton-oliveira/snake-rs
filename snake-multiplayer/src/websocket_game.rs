@@ -1,4 +1,4 @@
-use std::{sync::Arc, thread, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use crate::{Directions, Users};
 use bincode::{config, encode_to_vec};
@@ -11,7 +11,7 @@ use snake::{
 };
 use tokio::{
     sync::{mpsc, RwLock},
-    time::Instant,
+    time::{sleep, Instant},
 };
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
@@ -21,7 +21,7 @@ const CONFIG: GameConfig = GameConfig {
     dim: (20, 14),
     direction: Direction::Right,
 };
-const TICK_INTERVAL: u128 = 500;
+const TICK_INTERVAL: u128 = 300;
 
 pub struct WsGame {
     pub game: Arc<RwLock<Game>>,
@@ -48,8 +48,8 @@ impl WsGame {
         let (tx, rx) = mpsc::unbounded_channel();
         let rx = UnboundedReceiverStream::new(rx);
         let fut = rx.forward(user_ws_tx).map(|result| {
-            if let Err(e) = result {
-                println!("websocket send error: {:?}", e);
+            if let Err(_e) = result {
+                // ignoring all errors
             }
         });
         tokio::task::spawn(fut);
@@ -91,7 +91,7 @@ impl WsGame {
                         }
                     }
                     Err(_e) => {
-                        // ignoring for now
+                        // ignoring all errors
                         break;
                     }
                 };
@@ -113,16 +113,12 @@ impl WsGame {
             game.write().await.state = GameState::Playing;
             let mut now = Instant::now();
             loop {
-                let sleep = (TICK_INTERVAL - now.elapsed().as_millis()) as u64;
-                if sleep > 0 {
-                    thread::sleep(Duration::from_millis(sleep));
-                }
                 {
                     let mut game = game.write().await;
                     // reflect received directions on game
                     for (snake_id, direction) in directions.read().await.iter() {
                         let direction = direction.read().await.clone();
-                        game.head_to(*snake_id, direction.clone());
+                        game.head_to(*snake_id, direction);
                     }
                     game.tick();
                     game.add_missing_food();
@@ -132,6 +128,13 @@ impl WsGame {
                     }
                 }
                 WsGame::send_game_data(Arc::clone(&users), Arc::clone(&game));
+                let sleep_time = (TICK_INTERVAL - now.elapsed().as_millis()) as u64;
+                if sleep_time > 0 {
+                    if sleep_time != TICK_INTERVAL as u64 {
+                        println!("slept: {:?}", sleep_time);
+                    }
+                    sleep(Duration::from_millis(sleep_time)).await;
+                }
                 now = Instant::now();
             }
         };
@@ -143,7 +146,9 @@ impl WsGame {
         let mut set_snake_id: Vec<u8> = vec![2];
         set_snake_id.extend_from_slice(&encode_to_vec(snake_id, config::standard()).unwrap());
         if let Some(tx) = users.read().await.get(&snake_id) {
-            tx.send(Ok(Message::binary(set_snake_id))).unwrap();
+            if let Err(_msg) = tx.send(Ok(Message::binary(set_snake_id))) {
+                // ignoring all errors
+            }
         }
     }
 
@@ -153,8 +158,17 @@ impl WsGame {
             data.extend_from_slice(&Arc::clone(&game).read().await.encode_game_data());
 
             let content = Message::binary(data);
-            for (_, tx) in users.read().await.iter() {
-                tx.send(Ok(content.clone())).unwrap();
+            for (snake_id, tx) in users.read().await.iter() {
+                let content = Ok(content.clone());
+                let tx = tx.clone();
+                let game = Arc::clone(&game);
+                let snake_id = *snake_id;
+                let send = async move {
+                    if let Err(_msg) = tx.send(content) {
+                        RwLock::write(&game).await.remove_snake(snake_id);
+                    }
+                };
+                tokio::task::spawn(send);
             }
         };
         tokio::task::spawn(fut);

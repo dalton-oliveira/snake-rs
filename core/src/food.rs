@@ -73,8 +73,7 @@ impl FoodField {
 
         let food = Food::new(FoodType::Basic, field.from_idx(idx));
         self.set_food(food);
-
-        if self.count % 6 == 0 {
+        if self.count % 5 == 0 {
             let food = self.random_special(max - 1, field);
             if let Some(food) = food {
                 self.set_food(food);
@@ -95,6 +94,7 @@ impl FoodField {
             if nth == 0 {
                 break;
             }
+            // @todo fix special food still overlaping snakes
             if !field.idx_filled(idx) && !field.idx_filled(idx + 1) {
                 nth -= 1;
             }
