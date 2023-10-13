@@ -17,6 +17,7 @@ ws.addEventListener("message", async function (msg) {
   const data = new Uint8Array(await msg.data.arrayBuffer());
   if (data[0] === 1) scene.set_data(data.slice(1));
   if (data[0] === 2) scene.snake_id(data.slice(1));
+  if (data[0] === 3) ws.send(new Uint8Array([5, ...data.slice(1)]));
   scene.draw();
 });
 
@@ -49,7 +50,6 @@ const hammertime = new Hammer(document, {});
 hammertime.get("pan").set({ direction: Hammer.DIRECTION_ALL });
 hammertime.on("panleft panright panup pandown", function (ev) {
   toDirection(ev.type);
-  // const threads = [];
 });
 
 document.addEventListener("keydown", (e) => {

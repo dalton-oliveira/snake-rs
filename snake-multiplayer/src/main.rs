@@ -7,6 +7,7 @@ use rust_embed::RustEmbed;
 use salvo::prelude::*;
 use salvo::serve_static::static_embed;
 use salvo::websocket::WebSocketUpgrade;
+use tracing_subscriber;
 
 #[derive(RustEmbed)]
 #[folder = "../wasm-render/www/"]
@@ -17,6 +18,8 @@ const BIND_ADDRESS: &str = "0.0.0.0:80";
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     GAME.start_game();
     let router = Router::new()
         .push(Router::with_path("game_data").goal(user_connected))
@@ -44,6 +47,6 @@ async fn main() {
 #[handler]
 async fn user_connected(req: &mut Request, res: &mut Response) -> Result<(), StatusError> {
     WebSocketUpgrade::new()
-        .upgrade(req, res, |ws| GAME.add_user(ws))
+        .upgrade(req, res, |ws| GAME.ingress_user(ws))
         .await
 }

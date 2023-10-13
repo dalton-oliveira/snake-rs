@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
-use bincode::{config, decode_from_slice, encode_to_vec};
-
 use crate::{
     food::FoodField,
     render::GameRender,
     snake::{Snake, SnakeNode},
     types::{Direction, Field, FoodType, GameConfig, GameState},
+    utils::{decode, encode},
 };
 
 #[derive(bincode::Encode, bincode::Decode, Debug)]
@@ -28,6 +27,7 @@ impl GameData {
     }
 }
 
+#[derive(Debug)]
 pub struct Game {
     pub config: GameConfig,
     pub snakes: HashMap<u16, Snake>,
@@ -51,12 +51,11 @@ impl Game {
     }
 
     pub fn encode_game_data(&self) -> Vec<u8> {
-        encode_to_vec(GameData::from_game(self), config::standard()).unwrap()
+        encode(GameData::from_game(self)).unwrap()
     }
 
     pub fn set_game_data(&mut self, data: Vec<u8>) {
-        let (data, _size): (GameData, usize) =
-            decode_from_slice(&data[..], config::standard()).unwrap();
+        let (data, _size): (GameData, usize) = decode(&data).unwrap();
 
         let (width, height) = data.config.dim;
         let mut field = Field::new(width, height);

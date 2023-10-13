@@ -84,9 +84,15 @@ impl FoodField {
     /// Special foods requires 2 slots on the field. It must be not placed on the last col,
     ///  as it can't wrap to the next row.
     pub fn random_special(&mut self, max: u16, field: &Field) -> Option<Food> {
+        let required = (self.foods.len() * 2) as u16;
+        // check enought space
+        let max = max / 2;
+        if max < 1 || required >= max - 1 {
+            return None;
+        }
+        let max = max - required - 1;
         let mut rng = rand::thread_rng();
-        let max = max / 2 - (self.foods.len() * 2) as u16;
-        let mut nth = rng.gen_range(0..max - 1);
+        let mut nth = rng.gen_range(0..max);
 
         // make sure each idx doesn't land on the last col
         let mut idx: u16 = field.width % 2;

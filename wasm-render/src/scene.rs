@@ -1,8 +1,8 @@
-use bincode::{config, decode_from_slice};
 use snake::{
     game::GameData,
     render::GameRender,
     types::{FoodType, GameConfig},
+    utils::decode,
 };
 use wasm_bindgen::prelude::*;
 
@@ -37,8 +37,7 @@ impl GameScene {
     }
 
     pub fn snake_id(&mut self, data: Vec<u8>) {
-        let (snake_id, _size): (u16, usize) =
-            decode_from_slice(&data[..], config::standard()).unwrap();
+        let (snake_id, _size): (u16, usize) = decode(&data).unwrap();
         self.snake_id = Some(snake_id);
     }
 
@@ -63,8 +62,7 @@ impl GameScene {
     }
 
     pub fn set_data(&mut self, data: Vec<u8>) {
-        let (data, _size): (GameData, usize) =
-            decode_from_slice(&data[..], config::standard()).unwrap();
+        let (data, _size): (GameData, usize) = decode(&data).unwrap();
         let (width, height) = data.config.dim;
         let screen = CanvasScreen {};
         self.render = BinaryRender::new(width, height, Box::new(screen));
