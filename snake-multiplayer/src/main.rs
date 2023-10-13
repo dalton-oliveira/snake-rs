@@ -1,3 +1,4 @@
+use salvo::conn::openssl::{Keycert, OpensslConfig};
 use snake_multiplayer::websocket_game::WsGame;
 
 use once_cell::sync::Lazy;
@@ -12,18 +13,32 @@ use salvo::websocket::WebSocketUpgrade;
 struct Assets;
 
 static GAME: Lazy<WsGame> = Lazy::new(|| WsGame::new());
-const BIND_ADDRESS: &str = "0.0.0.0:4000";
+const BIND_ADDRESS: &str = "0.0.0.0:80";
+
 #[tokio::main]
 async fn main() {
+    GAME.start_game();
     let router = Router::new()
         .push(Router::with_path("game_data").goal(user_connected))
         .push(Router::with_path("<*path>").get(static_embed::<Assets>().fallback("index.html")));
 
-    let acceptor = TcpListener::new(BIND_ADDRESS).bind().await;
-    println!("serving at http://{BIND_ADDRESS}");
-    GAME.start_game();
+    let bind_address =
+        std::env::var("SNAKE_BIND_ADDR").unwrap_or_else(|_| String::from(BIND_ADDRESS));
 
-    Server::new(acceptor).serve(router).await;
+    if bind_address.ends_with("443") {
+        let config = OpensslConfig::new(
+            Keycert::new()
+                .with_cert(include_bytes!("../../certs/cert.pem").as_ref())
+                .with_key(include_bytes!("../../certs/privKey.pem").as_ref()),
+        );
+        println!("serving at https://{}", bind_address.clone());
+        let acceptor = TcpListener::new(bind_address).openssl(config).bind().await;
+        Server::new(acceptor).serve(router).await;
+    } else {
+        println!("serving at http://{}", bind_address.clone());
+        let acceptor = TcpListener::new(bind_address).bind().await;
+        Server::new(acceptor).serve(router).await
+    }
 }
 
 #[handler]

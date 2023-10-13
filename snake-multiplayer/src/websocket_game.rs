@@ -32,7 +32,7 @@ pub struct WsGame {
 impl WsGame {
     pub fn new() -> WsGame {
         let game = Game::new(CONFIG);
-        let users = Arc::clone(&Users::default());
+        let users = Users::default();
         let game = Arc::new(RwLock::new(game));
         WsGame {
             game,

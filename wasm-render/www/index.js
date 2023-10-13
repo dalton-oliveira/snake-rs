@@ -10,8 +10,8 @@ const DIRECTION = {
 await init();
 
 const scene = GameScene.new();
-
-const ws = new WebSocket(`ws://${location.host}/game_data`);
+const protocol = location.protocol.replace("http", "ws");
+const ws = new WebSocket(`${protocol}//${location.host}/game_data`);
 
 ws.addEventListener("message", async function (msg) {
   const data = new Uint8Array(await msg.data.arrayBuffer());
