@@ -4,7 +4,7 @@ use crate::{
     food::FoodField,
     render::GameRender,
     snake::{Snake, SnakeNode},
-    types::{Direction, Field, FoodType, GameConfig, GameState},
+    types::{Direction, Field, GameConfig, GameState},
     utils::{decode, encode},
 };
 
@@ -75,7 +75,7 @@ impl Game {
     pub fn add_snake(&mut self) -> u16 {
         let mut config = self.config.clone();
         config.start = (0, self.snakes.len() as u16);
-
+        self.food.minimum += 1;
         let id = (self.snakes.len() + 1) as u16;
         let snake = Snake::new(&mut self.field, &config, id);
         self.snakes.insert(id, snake);
@@ -85,6 +85,7 @@ impl Game {
     pub fn remove_snake(&mut self, snake_id: u16) {
         //@todo clear rendering coming soon..
         if let Some(snake) = self.snakes.remove(&snake_id) {
+            self.food.minimum -= 1;
             for node in snake.nodes.iter() {
                 self.field.set(&node.position, false);
             }
@@ -92,8 +93,7 @@ impl Game {
     }
 
     pub fn add_food(&mut self) {
-        let max = self.max();
-        self.food.add_food(max, &self.field);
+        self.food.add_food(&self.field);
     }
 
     fn crawl(&mut self) {
@@ -121,29 +121,13 @@ impl Game {
     }
 
     pub fn add_missing_food(&mut self) {
-        let mut required_foods = self.snakes.len();
-        for food in self.food.foods.iter() {
-            if food.shape == FoodType::Basic && required_foods > 0 {
-                required_foods -= 1;
-            }
-        }
-        for _ in 0..required_foods {
-            self.food.add_food(self.max(), &self.field);
-        }
+        self.food.add_food(&self.field);
     }
 
     pub fn head_to(&mut self, snake_id: u16, to: Direction) {
         if let Some(snake) = self.snakes.get_mut(&snake_id) {
             snake.head_to(to);
         }
-    }
-
-    fn max(&self) -> u16 {
-        let mut max: usize = 0;
-        for snake in self.snakes.values() {
-            max += snake.nodes.len();
-        }
-        return (self.field.bit_set.len() - max) as u16;
     }
 
     pub fn draw(&mut self, render: &mut impl GameRender) {

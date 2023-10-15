@@ -14,6 +14,7 @@ const BAG: [FoodType; 6] = [
 #[derive(bincode::Encode, bincode::Decode, PartialEq, Debug, Clone)]
 pub struct FoodField {
     pub foods: Vec<Food>,
+    pub minimum: u16,
     pub count: u16,
     bag: [FoodType; BAG.len()],
 }
@@ -23,10 +24,17 @@ impl FoodField {
         FoodField {
             foods: Vec::new(),
             count: 0,
+            minimum: 0,
             bag: BAG.clone(),
         }
     }
-
+    pub fn total_filled(&self) -> u16 {
+        let mut total: u16 = 0;
+        for f in self.foods.iter() {
+            total += f.size as u16;
+        }
+        return total;
+    }
     pub fn has_at(&self, p: &FieldPoint) -> Option<usize> {
         for i in 0..self.foods.len() {
             if self.foods[i].is_at(p) {
@@ -50,14 +58,24 @@ impl FoodField {
         self.count += 1;
     }
 
-    pub fn add_food(&mut self, max: u16, field: &Field) {
-        self.count += 1;
-        let mut nth = rand::thread_rng().gen_range(0..max - 1);
+    pub fn add_food(&mut self, field: &Field) {
+        let total_filled = self.total_filled();
+        if total_filled >= self.minimum {
+            return;
+        }
+        let max = (field.bit_set.len() - field.bit_set.count_ones(..)) as u16 - total_filled;
+        if max < 1 {
+            return;
+        }
+
+        // @todo clear-me, way too complex
+        let mut nth = rand::thread_rng().gen_range(0..max);
         let mut idx: u16 = 0;
 
         // finds the nth free position
+        let max_len = field.bit_set.len() as u16;
         loop {
-            if nth == 0 {
+            if nth == 0 || idx == max_len {
                 break;
             }
             if !field.idx_filled(idx) {
@@ -67,12 +85,18 @@ impl FoodField {
         }
 
         // won't overlap with current food
-        while self.has_at(&field.from_idx(idx)).is_some() || field.idx_filled(idx) {
+        while idx < max_len && self.has_at(&field.from_idx(idx)).is_some() || field.idx_filled(idx)
+        {
             idx = (idx + 1) % field.bit_set.len() as u16;
+        }
+
+        if idx == max_len {
+            return;
         }
 
         let food = Food::new(FoodType::Basic, field.from_idx(idx));
         self.set_food(food);
+        self.count += 1;
         if self.count % 5 == 0 {
             let food = self.random_special(max - 1, field);
             if let Some(food) = food {
@@ -96,12 +120,13 @@ impl FoodField {
 
         // make sure each idx doesn't land on the last col
         let mut idx: u16 = field.width % 2;
-        loop {
-            if nth == 0 {
-                break;
-            }
-            // @todo fix special food still overlaping snakes
-            if !field.idx_filled(idx) && !field.idx_filled(idx + 1) {
+        while nth > 0 && (idx as usize + 1) < field.bit_set.len() {
+            let p1 = field.from_idx(idx);
+            let p2 = FieldPoint {
+                x: p1.x + 1,
+                y: p1.y,
+            };
+            if !field.filled(&p1) && !field.filled(&p2) {
                 nth -= 1;
             }
             idx += 2;

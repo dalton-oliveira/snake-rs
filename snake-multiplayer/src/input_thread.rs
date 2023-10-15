@@ -1,11 +1,19 @@
 use futures_util::stream::SplitStream;
 use futures_util::StreamExt;
 use salvo::websocket::WebSocket;
-use snake::{game::Game, types::Direction, utils::decode};
+use snake::{
+    game::Game,
+    types::{Direction, GameState},
+    utils::decode,
+};
 use std::{sync::Arc, time::SystemTime};
 use tokio::sync::RwLock;
+use tracing::debug;
 
-use crate::DirectionArc;
+use crate::{
+    websocket_game::{PONG, QUIT},
+    DirectionArc,
+};
 
 pub fn rx_commands(
     direction_arc: DirectionArc,
@@ -24,23 +32,28 @@ pub fn rx_commands(
                         continue;
                     }
                     // @todo make first u8 always the type
-                    if msg[0] == 5 {
+                    if msg[0] == PONG {
                         log_ping(msg, snake_id);
                         continue;
+                    }
+
+                    if msg[0] == QUIT {
+                        RwLock::write(&game).await.state = GameState::Over;
+                        break;
                     }
 
                     if let Some(next_direction) = to_direction(msg[0]) {
                         if direction == next_direction {
                             continue;
                         }
-                        let mut d = direction_arc.write().await;
+                        let mut d = RwLock::write(&direction_arc).await;
                         *d = next_direction;
                         direction = next_direction;
                     }
                 }
             }
         }
-        game.write().await.remove_snake(snake_id);
+        RwLock::write(&game).await.remove_snake(snake_id);
     };
     tokio::task::spawn(fut);
 }
@@ -51,7 +64,7 @@ fn log_ping(msg: &[u8], snake_id: u16) {
         .duration_since(past)
         .expect("μs opa!")
         .as_micros();
-    println!("snake: {snake_id} ping: {:?} μs", μs);
+    debug!("snake: {snake_id} ping: {:?} μs", μs);
 }
 
 fn to_direction(msg: u8) -> Option<Direction> {

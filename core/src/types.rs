@@ -13,7 +13,7 @@ pub enum FoodType {
 
 #[derive(bincode::Encode, bincode::Decode, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Food {
-    size: u8,
+    pub size: u8,
     pub ticks_left: u8,
     pub weight: u8,
     pub shape: FoodType,

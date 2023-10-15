@@ -7,6 +7,8 @@ use rust_embed::RustEmbed;
 use salvo::prelude::*;
 use salvo::serve_static::static_embed;
 use salvo::websocket::WebSocketUpgrade;
+
+use tracing::Level;
 use tracing_subscriber;
 
 #[derive(RustEmbed)]
@@ -18,7 +20,7 @@ const BIND_ADDRESS: &str = "0.0.0.0:80";
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     GAME.start_game();
     let router = Router::new()

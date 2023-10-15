@@ -8,6 +8,7 @@ pub mod input_thread;
 pub mod websocket_game;
 
 pub type User = mpsc::UnboundedSender<Result<Message, salvo::Error>>;
+// pub type User = SplitSink<WebSocket, Message>;
 pub type Users = Arc<RwLock<HashMap<u16, User>>>;
 
 pub type DirectionArc = Arc<RwLock<Direction>>;
