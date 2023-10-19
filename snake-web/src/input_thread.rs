@@ -1,19 +1,12 @@
 use futures_util::stream::SplitStream;
 use futures_util::StreamExt;
 use salvo::websocket::WebSocket;
-use snake::{
-    game::Game,
-    types::{Direction, GameState},
-    utils::decode,
-};
+use snake::{game::Game, types::Direction, utils::decode};
 use std::{sync::Arc, time::SystemTime};
 use tokio::sync::RwLock;
 use tracing::debug;
 
-use crate::{
-    websocket_game::{PONG, QUIT},
-    DirectionArc,
-};
+use crate::{websocket_game::DIRECTION, websocket_game::PING, DirectionArc};
 
 pub fn rx_commands(
     direction_arc: DirectionArc,
@@ -31,24 +24,19 @@ pub fn rx_commands(
                     if msg.is_empty() {
                         continue;
                     }
-                    // @todo make first u8 always the type
-                    if msg[0] == PONG {
-                        log_ping(msg, snake_id);
-                        continue;
-                    }
-
-                    if msg[0] == QUIT {
-                        RwLock::write(&game).await.state = GameState::Over;
-                        break;
-                    }
-
-                    if let Some(next_direction) = to_direction(msg[0]) {
-                        if direction == next_direction {
-                            continue;
+                    match msg {
+                        [PING, ..] => log_ping(msg, snake_id),
+                        [DIRECTION, code] => {
+                            if let Some(next_direction) = to_direction(*code) {
+                                if direction == next_direction {
+                                    continue;
+                                }
+                                let mut d = RwLock::write(&direction_arc).await;
+                                *d = next_direction;
+                                direction = next_direction;
+                            }
                         }
-                        let mut d = RwLock::write(&direction_arc).await;
-                        *d = next_direction;
-                        direction = next_direction;
+                        _ => continue,
                     }
                 }
             }
@@ -62,9 +50,9 @@ fn log_ping(msg: &[u8], snake_id: u16) {
     let (past, _size): (SystemTime, usize) = decode(&msg[1..msg.len()]).unwrap();
     let μs = SystemTime::now()
         .duration_since(past)
-        .expect("μs opa!")
-        .as_micros();
-    debug!("snake: {snake_id} ping: {:?} μs", μs);
+        .expect("ping measure error")
+        .as_millis();
+    debug!("snake: {snake_id} ping: {:?} ms", μs);
 }
 
 fn to_direction(msg: u8) -> Option<Direction> {

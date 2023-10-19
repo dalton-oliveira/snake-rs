@@ -1,22 +1,20 @@
-use salvo::conn::openssl::{Keycert, OpensslConfig};
-use snake_multiplayer::websocket_game::WsGame;
-
 use once_cell::sync::Lazy;
+use salvo::conn::openssl::{Keycert, OpensslConfig};
 
 use rust_embed::RustEmbed;
 use salvo::prelude::*;
 use salvo::serve_static::static_embed;
 use salvo::websocket::WebSocketUpgrade;
-
+use snake_web::websocket_game::WsGame;
 use tracing::Level;
 use tracing_subscriber;
 
 #[derive(RustEmbed)]
-#[folder = "../wasm-render/www/"]
+#[folder = "www/"]
 struct Assets;
 
 static GAME: Lazy<WsGame> = Lazy::new(|| WsGame::new());
-const BIND_ADDRESS: &str = "0.0.0.0:80";
+const PORT_BIND: &str = "80";
 
 #[tokio::main]
 async fn main() {
@@ -27,10 +25,9 @@ async fn main() {
         .push(Router::with_path("game_data").goal(user_connected))
         .push(Router::with_path("<*path>").get(static_embed::<Assets>().fallback("index.html")));
 
-    let bind_address =
-        std::env::var("SNAKE_BIND_ADDR").unwrap_or_else(|_| String::from(BIND_ADDRESS));
-
-    if bind_address.ends_with("443") {
+    let port = std::env::var("PORT_BIND").unwrap_or_else(|_| PORT_BIND.to_owned());
+    let bind_address = format!("0.0.0.0:{port}");
+    if !port.ends_with("80") {
         let config = OpensslConfig::new(
             Keycert::new()
                 .with_cert(include_bytes!("../../certs/cert.pem").as_ref())

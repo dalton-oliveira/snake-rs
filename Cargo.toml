@@ -4,7 +4,7 @@ members = [
     "core",
     "wasm-render",
     "snake-termion",
-    "snake-multiplayer",
+    "snake-web",
 ]
 resolver = "1"
 

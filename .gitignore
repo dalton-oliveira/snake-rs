@@ -1,5 +1,5 @@
 **/target
 .vscode
 **/.DS_Store
-wasm-render/www/wasm
+snake-web/www/wasm
 certs
