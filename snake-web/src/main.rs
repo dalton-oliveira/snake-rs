@@ -1,5 +1,4 @@
 use once_cell::sync::Lazy;
-use salvo::conn::openssl::{Keycert, OpensslConfig};
 
 use rust_embed::RustEmbed;
 use salvo::prelude::*;
@@ -27,20 +26,10 @@ async fn main() {
 
     let port = std::env::var("PORT_BIND").unwrap_or_else(|_| PORT_BIND.to_owned());
     let bind_address = format!("0.0.0.0:{port}");
-    if !port.ends_with("80") {
-        let config = OpensslConfig::new(
-            Keycert::new()
-                .with_cert(include_bytes!("../../certs/cert.pem").as_ref())
-                .with_key(include_bytes!("../../certs/privKey.pem").as_ref()),
-        );
-        println!("serving at https://{}", bind_address.clone());
-        let acceptor = TcpListener::new(bind_address).openssl(config).bind().await;
-        Server::new(acceptor).serve(router).await;
-    } else {
-        println!("serving at http://{}", bind_address.clone());
-        let acceptor = TcpListener::new(bind_address).bind().await;
-        Server::new(acceptor).serve(router).await
-    }
+
+    println!("serving at http://{}", bind_address.clone());
+    let acceptor = TcpListener::new(bind_address).bind().await;
+    Server::new(acceptor).serve(router).await
 }
 
 #[handler]
