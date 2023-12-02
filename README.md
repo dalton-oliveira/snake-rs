@@ -1,8 +1,16 @@
-# snake-rust
+# Overview
 
-I'm learning Rust by implementing a multiplayer Snake game, so feedback/suggestions is more than welcome! The idea is to have the core as a separate crate and distinct apps based on the rendering system. Also looked into rendering the same way as the old Nokia phones.
+This is an attempt to mimic Nokia Snake game while learning Rust, so suggestions are more than welcome! It's using [Salvo](https://github.com/salvo-rs/salvo) as backend which sends game state data via websocket, so yes it's designed to be multiplayer. Front-end is mainly done with wasm.
 
-## Web App
+![snake-web](https://github.com/dalton-oliveira/snake-rust/assets/3465913/23364a6b-3b59-4807-9525-d18470ff2a93)
+
+## Run (Docker)
+
+```bash
+docker-compose build && docker-compose up
+```
+
+## Run
 
 ### Install [Rust](https://www.rust-lang.org/tools/install)
 
@@ -16,26 +24,30 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 cargo install wasm-bindgen-cli
 ```
 
-### Web version (multi-player)
+### Add WASM as target
 
 ```bash
 rustup target add wasm32-unknown-unknown
 ./build.sh
-cargo run -p snake-multiplayer
+cargo run -p snake-web
 ```
 
-### Running on browser
+## Run on terminal
 
-https://github.com/dalton-oliveira/snake-rust/assets/3465913/9c18d0d3-a21b-4da9-bc58-d93de935021c
-
-## Terminal version
-
-To run the game on terminal just:
+Press `q` to quit
 
 ```bash
-cargo run -p snake-multiplayer
+cargo run -p snake-termion
 ```
 
-### Running on termion
+![snake-termion](https://github.com/dalton-oliveira/snake-rust/assets/3465913/95d5d6dd-0027-4286-a562-219c83c2fac4)
 
-https://github.com/dalton-oliveira/snake-rust/assets/3465913/f8d9febc-8eb0-4f54-8604-49749a308b27
+## Roadmap
+
+- Trace backend and front-end calls with [Open Telemetry](https://github.com/open-telemetry/opentelemetry-rust)
+- Add unit and integration tests
+- Experiment WebRTC in order to reduce latency
+- Run it on a embedded system with restricted memory and processing power
+- Large world where the snake can navigate to stress test chosen data structures
+- Other game elements such as walls and wormholes
+- Graceful shutdown
