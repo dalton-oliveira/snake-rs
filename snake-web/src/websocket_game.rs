@@ -1,6 +1,6 @@
 use crate::{input_thread::rx_commands, DirectionArc, Directions};
 use futures_util::SinkExt;
-use futures_util::{stream::SplitSink, StreamExt};
+use futures_util::StreamExt;
 use salvo::websocket::{Message, WebSocket};
 use snake::{
     game::Game,
@@ -32,8 +32,8 @@ const TICK_INTERVAL: u128 = 250 * 1000;
 pub struct WsGame {
     pub game: Arc<RwLock<Game>>,
     directions: Directions,
-    tx: Arc<RwLock<Sender<Vec<u8>>>>,
-    rx: Receiver<Vec<u8>>,
+    tx: Arc<RwLock<Sender<Message>>>,
+    rx: Receiver<Message>,
 }
 
 pub const GAME_DATA: u8 = 1;
@@ -45,7 +45,7 @@ impl WsGame {
     pub fn new() -> WsGame {
         let game = Game::new(CONFIG);
         let game = Arc::new(RwLock::new(game));
-        let data: Vec<u8> = vec![];
+        let data: Message = Message::binary(vec![]);
         let (tx, rx) = watch::channel(data);
 
         WsGame {
@@ -57,7 +57,7 @@ impl WsGame {
     }
 
     #[instrument]
-    async fn add_user(&self, tx: &SplitSink<WebSocket, Message>) -> (u16, DirectionArc) {
+    async fn add_user(&self) -> (u16, DirectionArc) {
         let direction = Arc::new(RwLock::new(CONFIG.direction.clone()));
         let mut directions = RwLock::write(&self.directions).await;
 
@@ -67,17 +67,17 @@ impl WsGame {
         return (snake_id, direction);
     }
 
-    #[instrument]
+    #[instrument(skip(ws))]
     pub async fn ingress_user(&self, ws: WebSocket) {
         let (mut ws_tx, ws_rx) = ws.split();
 
-        let (snake_id, direction) = self.add_user(&ws_tx).await;
-
+        let (snake_id, direction) = self.add_user().await;
+        let game = Arc::clone(&self.game);
         let mut rx = self.rx.clone();
         tokio::task::spawn(async move {
             let notify = Message::binary(to_command(NOTIFY, encode(snake_id).unwrap()));
             if let Err(_msg) = ws_tx.send(notify).await {
-                // ignoring all errors
+                RwLock::write(&game).await.remove_snake(snake_id);
             }
             loop {
                 if let Ok(()) = rx.changed().await {
@@ -85,18 +85,15 @@ impl WsGame {
                         Message::binary(to_command(PING, encode(SystemTime::now()).unwrap()));
                     if let Err(_msg) = ws_tx.send(ping).await {
                         break;
-                        // ignoring all errors
                     }
-                    // let last = Instant::now();
-                    let val = rx.borrow_and_update().to_owned();
+                    let game_data = rx.borrow_and_update().to_owned();
 
-                    let game_data = Message::binary(to_command(GAME_DATA, val));
                     if let Err(_msg) = ws_tx.send(game_data).await {
                         break;
-                        // ignoring all errors
                     }
                 }
             }
+            RwLock::write(&game).await.remove_snake(snake_id);
         });
 
         rx_commands(direction, snake_id, ws_rx, Arc::clone(&self.game));
@@ -134,7 +131,7 @@ impl WsGame {
                     game.add_missing_food();
 
                     let game_data = game.encode_game_data();
-
+                    let game_data = Message::binary(to_command(GAME_DATA, game_data));
                     if let Err(msg) = tx.send(game_data) {
                         error!("error sending game_data {msg:?}");
                     }
