@@ -45,8 +45,8 @@ cargo run -p snake-termion
 ## Roadmap
 
 - Trace backend and front-end calls with [Open Telemetry](https://github.com/open-telemetry/opentelemetry-rust)
-- Add unit and integration tests
 - Experiment WebRTC in order to reduce latency
+- Add unit and integration tests
 - Run it on a embedded system with restricted memory and processing power
 - Large world where the snake can navigate to stress test chosen data structures
 - Other game elements such as walls and wormholes

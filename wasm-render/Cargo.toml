@@ -8,7 +8,7 @@ edition.workspace = true
 [dependencies]
 js-sys = "0.3.64"
 snake = { path = "../core" }
-wasm-bindgen = "0.2.88"
+wasm-bindgen = "0.2"
 bincode = "2.0.0-rc.3"
 
 [lib]
