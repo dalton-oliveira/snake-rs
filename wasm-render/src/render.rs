@@ -113,14 +113,13 @@ impl BinaryRender {
     }
     fn draw_panel_digits(&mut self, n: u16, digits: u8, x0: i16) {
         let score_digits = to_base_10_array(n, digits);
-        for x in 0..score_digits.len() {
-            let digit = score_digits[x];
-            let sprite = Sprites::digit(digit);
+        for (x, digit) in score_digits.iter().enumerate() {
+            let sprite = Sprites::digit(*digit);
             self.screen.panel_sprite_3x5(sprite, x0 + x as i16);
         }
     }
     fn go_to(&mut self, node: &SnakeNode) {
-        self.pos = node.position.clone();
+        self.pos = node.position;
         self.turn(node.direction);
     }
     fn turn(&mut self, direction: Direction) {

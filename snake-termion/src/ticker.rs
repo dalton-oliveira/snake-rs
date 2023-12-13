@@ -9,7 +9,7 @@ use crate::render::TermionRender;
 
 pub fn run(game: Arc<RwLock<Game>>) {
     RwLock::write(&game).expect("can't add food").add_food();
-    let mut render = TermionRender::new();
+    let mut render = TermionRender::default();
     loop {
         let now = Instant::now();
 

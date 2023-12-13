@@ -40,14 +40,14 @@ impl Game {
     pub fn new(config: GameConfig) -> Game {
         let (width, height) = config.dim;
         let field = Field::new(width, height);
-        let game = Game {
+
+        Game {
             config,
-            food: FoodField::new(),
+            food: FoodField::default(),
             snakes: HashMap::new(),
             field,
             state: GameState::None,
-        };
-        return game;
+        }
     }
 
     pub fn encode_game_data(&self) -> Vec<u8> {
@@ -79,7 +79,7 @@ impl Game {
         let id = (self.snakes.len() + 1) as u16;
         let snake = Snake::new(&mut self.field, &config, id);
         self.snakes.insert(id, snake);
-        return id;
+        id
     }
 
     pub fn remove_snake(&mut self, snake_id: u16) {
@@ -133,10 +133,10 @@ impl Game {
     pub fn draw(&mut self, render: &mut impl GameRender) {
         // @todo use snake_id as render param
         for (_id, snake) in self.snakes.iter() {
-            render.snake(&snake, &self.food);
+            render.snake(snake, &self.food);
         }
         for food in self.food.foods.iter() {
-            render.food(&food);
+            render.food(food);
         }
     }
 

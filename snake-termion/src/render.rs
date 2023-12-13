@@ -33,7 +33,7 @@ impl GameRender for TermionRender {
         let mut node = head;
         for _i in 1..nodes.len() - 1 {
             node = iter.next_back().unwrap();
-            write("*", &node, &mut self.screen);
+            write("*", node, &mut self.screen);
         }
         let tail = iter.next_back().unwrap();
         self.replace_tail(tail, node.direction);
@@ -52,18 +52,19 @@ impl GameRender for TermionRender {
         // coming soon...
     }
 }
-
-impl TermionRender {
-    pub fn new() -> TermionRender {
+impl Default for TermionRender {
+    fn default() -> Self {
         let stdout = stdout()
             .into_raw_mode()
             .unwrap()
             .into_alternate_screen()
             .unwrap();
-        let mut screen = AlternateScreen::from(stdout);
+        let mut screen = stdout;
         write!(screen, "{}{}", termion::cursor::Hide, ToAlternateScreen).unwrap();
         TermionRender { screen, tail: None }
     }
+}
+impl TermionRender {
     pub fn clear(&mut self) {
         write!(self.screen, "{}", termion::clear::All).unwrap();
     }
@@ -80,28 +81,28 @@ impl TermionRender {
         }
     }
     fn snake_tail(node: &SnakeNode) -> &str {
-        return match node.direction {
+        match node.direction {
             Direction::Up | Direction::Down => "Ꞌ",
             Direction::Right | Direction::Left => "-",
-        };
+        }
     }
 
     fn snake_mounth_treat(node: &SnakeNode) -> &str {
-        return match node.direction {
+        match node.direction {
             Direction::Up => "v",
             Direction::Down => "ʌ",
             Direction::Right => "<",
             Direction::Left => ">",
-        };
+        }
     }
 
     fn snake_mounth(node: &SnakeNode) -> &str {
-        return match node.direction {
+        match node.direction {
             Direction::Up => "⩀",
             Direction::Down => "⨃",
             Direction::Right => "⪾",
             Direction::Left => "⪽",
-        };
+        }
     }
     fn replace_tail(&mut self, tail: &SnakeNode, direction: Direction) {
         self.clear_tail();
@@ -112,17 +113,17 @@ impl TermionRender {
             stuffed: false,
         };
 
-        self.save_tail(tail.clone());
+        self.save_tail(tail);
 
         write(TermionRender::snake_tail(&tail), &tail, &mut self.screen);
     }
 
     fn replace_head(&mut self, head: &SnakeNode, mouth_open: bool) {
         let sprite = match mouth_open {
-            true => TermionRender::snake_mounth_treat(&head),
-            false => TermionRender::snake_mounth(&head),
+            true => TermionRender::snake_mounth_treat(head),
+            false => TermionRender::snake_mounth(head),
         };
-        write(sprite, &head, &mut self.screen);
+        write(sprite, head, &mut self.screen);
     }
 }
 
@@ -134,8 +135,8 @@ pub fn write(c: &str, node: &SnakeNode, screen: &mut AlternateScreen<RawTerminal
 }
 
 pub fn write_point(c: &str, point: &FieldPoint, screen: &mut AlternateScreen<RawTerminal<Stdout>>) {
-    let x = point.x as u16;
-    let y = point.y as u16;
+    let x = point.x;
+    let y = point.y;
     write!(
         screen,
         "{}{}",

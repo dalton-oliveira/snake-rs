@@ -22,6 +22,12 @@ macro_rules! log {
     }
 }
 
+impl Default for GameScene {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[wasm_bindgen]
 impl GameScene {
     pub fn new() -> GameScene {
@@ -35,7 +41,6 @@ impl GameScene {
             snake_id: None,
         }
     }
-
     pub fn snake_id(&mut self, data: Vec<u8>) {
         let (snake_id, _size): (u16, usize) = decode(&data).unwrap();
         self.snake_id = Some(snake_id);

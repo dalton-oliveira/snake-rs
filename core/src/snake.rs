@@ -34,7 +34,7 @@ impl Snake {
         };
 
         snake.egg_hatch(field, start, config.size);
-        return snake;
+        snake
     }
 
     pub fn head_to(&mut self, to: Direction) -> bool {
@@ -42,7 +42,7 @@ impl Snake {
             return false;
         }
         self.direction.to = to;
-        return true;
+        true
     }
 
     pub fn next_head(&self) -> SnakeNode {
@@ -57,7 +57,7 @@ impl Snake {
 
     pub fn should_ignore_turn(&self, to: Direction) -> bool {
         let direction = self.nodes.back().unwrap().direction;
-        return opposite_of(direction) == to || direction == to;
+        opposite_of(direction) == to || direction == to
     }
 
     pub fn egg_hatch(&mut self, field: &mut Field, location: FieldPoint, size: u16) {

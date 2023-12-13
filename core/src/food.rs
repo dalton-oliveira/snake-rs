@@ -18,30 +18,26 @@ pub struct FoodField {
     pub count: u16,
     bag: [FoodType; BAG.len()],
 }
-
-impl FoodField {
-    pub fn new() -> FoodField {
+impl Default for FoodField {
+    fn default() -> Self {
         FoodField {
             foods: Vec::new(),
             count: 0,
             minimum: 0,
-            bag: BAG.clone(),
+            bag: BAG,
         }
     }
+}
+impl FoodField {
     pub fn total_filled(&self) -> u16 {
         let mut total: u16 = 0;
         for f in self.foods.iter() {
             total += f.size as u16;
         }
-        return total;
+        total
     }
     pub fn has_at(&self, p: &FieldPoint) -> Option<usize> {
-        for i in 0..self.foods.len() {
-            if self.foods[i].is_at(p) {
-                return Some(i);
-            }
-        }
-        return None;
+        (0..self.foods.len()).find(|&i| self.foods[i].is_at(p))
     }
 
     pub fn grab(&mut self, p: &FieldPoint) -> Option<Food> {
@@ -50,7 +46,7 @@ impl FoodField {
             let food = self.foods.remove(i);
             return Some(food);
         }
-        return None;
+        None
     }
 
     pub fn set_food(&mut self, food: Food) {
@@ -139,7 +135,7 @@ impl FoodField {
 
         self.bag.shuffle(&mut rng);
         let food = Food::new(self.bag[0], field.from_idx(idx));
-        return Some(food);
+        Some(food)
     }
 
     pub fn tick(&mut self) {
@@ -150,7 +146,7 @@ impl FoodField {
             if food.ticks_left > 1 {
                 food.ticks_left -= 1;
             }
-            return true;
+            true
         });
     }
 }

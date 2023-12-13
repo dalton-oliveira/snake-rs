@@ -22,29 +22,29 @@ pub struct Food {
 
 impl Food {
     pub fn new(shape: FoodType, p: FieldPoint) -> Food {
-        return match shape {
+        match shape {
             FoodType::Basic => Food {
                 ticks_left: 0,
                 size: 1,
                 weight: 8,
                 shape,
-                location: p.clone(),
+                location: p,
             },
             _ => Food {
                 ticks_left: 30,
                 size: 2,
                 weight: 45,
                 shape,
-                location: p.clone(),
+                location: p,
             },
-        };
+        }
     }
     // not generic but does the job
     pub fn is_at(&self, p: &FieldPoint) -> bool {
-        return match self.shape {
-            FoodType::Basic => self.location.eq(&p),
-            _ => self.location.eq(&p) || (self.location.add_tuple((1, 0))).eq(&p),
-        };
+        match self.shape {
+            FoodType::Basic => self.location.eq(p),
+            _ => self.location.eq(p) || (self.location.add_tuple((1, 0))).eq(p),
+        }
     }
 }
 
@@ -65,14 +65,14 @@ pub struct Field {
 impl Field {
     pub fn new(width: u16, height: u16) -> Field {
         let bit_set = FixedBitSet::with_capacity(width as usize * height as usize);
-        return Field {
+        Field {
             width,
             height,
             bit_set,
-        };
+        }
     }
     fn to_idx(&self, p: &FieldPoint) -> u16 {
-        ((p.y * self.width) + p.x) as u16
+        (p.y * self.width) + p.x
     }
     pub fn from_idx(&self, idx: u16) -> FieldPoint {
         FieldPoint {
@@ -123,9 +123,9 @@ impl FieldPoint {
         FieldPoint { x, y }
     }
     pub fn wrapping_sub(&self, direction: WrappableDirection) -> FieldPoint {
-        let mut direction = direction.clone();
+        let mut direction = direction;
         direction.to = opposite_of(direction.to);
-        return self.wrapping_add(direction);
+        self.wrapping_add(direction)
     }
 }
 

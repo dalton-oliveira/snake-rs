@@ -23,6 +23,6 @@ fn main() {
         handle.join().unwrap();
     }
 
-    let mut render = TermionRender::new();
+    let mut render = TermionRender::default();
     render.show_cursor();
 }

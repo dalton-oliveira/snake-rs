@@ -22,7 +22,7 @@ use tracing_subscriber::{self};
 #[folder = "www/"]
 struct Assets;
 
-static GAME: Lazy<WsGame> = Lazy::new(|| WsGame::new());
+static GAME: Lazy<WsGame> = Lazy::new(WsGame::default);
 const PORT_BIND: &str = "80";
 
 fn init_tracer() -> Tracer {
@@ -39,7 +39,7 @@ fn init_tracer() -> Tracer {
         .with(opentelemetry)
         .init();
 
-    return tracer;
+    tracer
 }
 
 #[tokio::main]

@@ -44,8 +44,8 @@ pub const NOTIFY: u8 = 2;
 pub const PING: u8 = 3;
 pub const DIRECTION: u8 = 4;
 
-impl WsGame {
-    pub fn new() -> WsGame {
+impl Default for WsGame {
+    fn default() -> Self {
         let game = Game::new(CONFIG);
         let game = Arc::new(RwLock::new(game));
         let (game_data_sender, game_data_receiver) = watch::channel(Message::binary(vec![]));
@@ -56,7 +56,9 @@ impl WsGame {
             game_data_receiver,
         }
     }
+}
 
+impl WsGame {
     pub async fn ingress_user(&self, ws: WebSocket) {
         let (mut ws_tx, ws_rx) = ws.split();
 
@@ -68,33 +70,29 @@ impl WsGame {
             if let Err(_msg) = ws_tx.send(notify).await {
                 RwLock::write(&game).await.remove_snake(snake_id);
             }
-            loop {
-                if let Ok(()) = game_data_receiver.changed().await {
-                    let loop_span = span!(Level::INFO, "game_data", snake_id);
-                    let _enter = loop_span.enter();
+            while let Ok(()) = game_data_receiver.changed().await {
+                let loop_span = span!(Level::INFO, "game_data", snake_id);
+                let _enter = loop_span.enter();
 
-                    let game_span = info_span!("game_data");
-                    let game_data = game_data_receiver.borrow_and_update().to_owned();
+                let game_span = info_span!("game_data");
+                let game_data = game_data_receiver.borrow_and_update().to_owned();
 
-                    if let Err(_msg) = ws_tx.send(game_data).await {
-                        error_span!("game_data");
-                        break;
-                    }
-                    drop(game_span);
-
-                    let ping_span = info_span!("ping");
-                    let ping =
-                        Message::binary(to_command(PING, encode(SystemTime::now()).unwrap()));
-                    if let Err(_msg) = ws_tx.send(ping).await {
-                        // @todo how to send error spans
-                        span!(Level::ERROR, "ping_error");
-                        break;
-                    }
-                    drop(ping_span);
-                } else {
+                if let Err(_msg) = ws_tx.send(game_data).await {
+                    error_span!("game_data");
                     break;
                 }
+                drop(game_span);
+
+                let ping_span = info_span!("ping");
+                let ping = Message::binary(to_command(PING, encode(SystemTime::now()).unwrap()));
+                if let Err(_msg) = ws_tx.send(ping).await {
+                    // @todo how to send error spans
+                    span!(Level::ERROR, "ping_error");
+                    break;
+                }
+                drop(ping_span);
             }
+
             let span = span!(Level::INFO, "remove", snake_id);
 
             RwLock::write(&game).await.remove_snake(snake_id);

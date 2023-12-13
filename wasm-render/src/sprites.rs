@@ -2,9 +2,10 @@ use snake::types::{Direction, FoodType};
 
 pub struct Sprites {}
 
+#[allow(clippy::unusual_byte_groupings)]
 impl Sprites {
     pub fn food() -> u8 {
-        return 0b010_101_01;
+        0b010_101_01
     }
     pub fn special_food(element: FoodType) -> u32 {
         match element {
@@ -33,16 +34,16 @@ impl Sprites {
         }
     }
     pub fn eyes(direction: Direction) -> u8 {
-        return match direction {
+        match direction {
             Direction::Right => 0b0110_1100,
             Direction::Left => 0b1001_1100,
             Direction::Up => 0b1010_0110,
             Direction::Down => 0b0110_1010,
-        };
+        }
     }
 
     pub fn full_head(from: Direction, open: bool) -> [u8; 2] {
-        return [Sprites::mouth(from, open), Sprites::eyes(from)];
+        [Sprites::mouth(from, open), Sprites::eyes(from)]
     }
     pub fn dash_with_food(sprite: u8, direction: Direction) -> u8 {
         match direction {
@@ -52,31 +53,31 @@ impl Sprites {
     }
     pub fn full_node(from: Direction, to: Direction, has_food: bool) -> [u8; 2] {
         let sprites = [Sprites::corner(from, to), Sprites::block(from)];
-        if has_food == false {
+        if !has_food {
             return sprites;
         }
         if from == to {
             return [Sprites::dash_with_food(sprites[0], from), sprites[1]];
         }
-        return [sprites[0], Sprites::block_with_food(from, to, sprites[1])];
+        [sprites[0], Sprites::block_with_food(from, to, sprites[1])]
     }
     pub fn full_tail(direction: Direction) -> [u8; 2] {
-        return [Sprites::tail(direction), Sprites::dot(direction)];
+        [Sprites::tail(direction), Sprites::dot(direction)]
     }
 
     pub fn tail(direction: Direction) -> u8 {
-        return match direction {
+        match direction {
             Direction::Left => 0b0010_1100,
             Direction::Right => 0b0001_1100,
             Direction::Up => 0b0110_0010,
             Direction::Down => 0b0010_0110,
-        };
+        }
     }
     pub fn block(direction: Direction) -> u8 {
-        return match direction {
+        match direction {
             Direction::Up | Direction::Down => 0b0110_0110,
             Direction::Left | Direction::Right => 0b0011_1100,
-        };
+        }
     }
     pub fn back_dash(direction: Direction) -> u8 {
         match direction {
@@ -85,30 +86,30 @@ impl Sprites {
         }
     }
     pub fn dash(direction: Direction) -> u8 {
-        return match direction {
+        match direction {
             Direction::Right | Direction::Left => 0b0001_1000,
             Direction::Up | Direction::Down => 0b0010_0100,
-        };
+        }
     }
     pub fn mouth_open(direction: Direction) -> u8 {
-        return match direction {
+        match direction {
             Direction::Left | Direction::Up => 0b1001_0110,
             Direction::Right | Direction::Down => 0b0110_1001,
-        };
+        }
     }
     pub fn mouth(direction: Direction, mouth_open: bool) -> u8 {
-        return match mouth_open {
+        match mouth_open {
             true => Sprites::mouth_open(direction),
             false => Sprites::block(direction),
-        };
+        }
     }
     pub fn dot(direction: Direction) -> u8 {
-        return match direction {
+        match direction {
             Direction::Left => 0b0000_1000,
             Direction::Right => 0b0000_0100,
             Direction::Up => 0b0010_0000,
             Direction::Down => 0b0000_0010,
-        };
+        }
     }
     pub fn corner(from: Direction, to: Direction) -> u8 {
         let dash = Sprites::dash(to);
@@ -138,12 +139,12 @@ impl Sprites {
             (Direction::Up, Direction::Left) => 0b1000_0000,
             (_, _) => 0,
         };
-        return sprite | mask;
+        sprite | mask
     }
     pub fn node_dash(direction: Direction) -> u8 {
-        return match direction {
+        match direction {
             Direction::Down | Direction::Right => Sprites::back_dash(direction),
             Direction::Up | Direction::Left => Sprites::dash(direction),
-        };
+        }
     }
 }

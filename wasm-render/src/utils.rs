@@ -8,5 +8,5 @@ pub fn to_base_10_array(n: u16, digits: u8) -> Vec<u8> {
         n /= 10;
     }
 
-    return digits;
+    digits
 }
