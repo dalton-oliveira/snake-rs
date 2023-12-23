@@ -22,6 +22,7 @@ use tokio::{
 use tracing::error;
 use tracing::error_span;
 use tracing::info_span;
+use tracing::instrument;
 use tracing::span;
 use tracing::Level;
 
@@ -59,6 +60,7 @@ impl Default for WsGame {
 }
 
 impl WsGame {
+    #[instrument(skip_all)]
     pub async fn ingress_user(&self, ws: WebSocket) {
         let (mut ws_tx, ws_rx) = ws.split();
 
@@ -102,6 +104,7 @@ impl WsGame {
         rx_commands(snake_id, ws_rx, Arc::clone(&self.game))
     }
 
+    #[instrument(skip_all)]
     pub fn start_game(&self) {
         let game_arc = Arc::clone(&self.game);
         let game_data_sender = Arc::clone(&self.game_data_sender);

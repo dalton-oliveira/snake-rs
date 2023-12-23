@@ -8,7 +8,7 @@ edition.workspace = true
 [dependencies]
 snake = { path = "../core" }
 tokio = { version = "1", features = ["macros"] }
-salvo = { version = "0.59.0", features = ["websocket", "serve-static", "otel", "affix"] }
+salvo = { version = "0.63.0", features = ["websocket", "serve-static", "otel", "affix"] }
 once_cell = "1"
 futures-util = { version = "0.3", default-features = false }
 rust-embed = "8.0.0"
@@ -21,3 +21,7 @@ tracing-opentelemetry = { version = "0.22.0" }
 sentry = "0.32.0"
 sentry-tracing = "0.32.0"
 openssl = { version = "0.10.54", features = ["vendored"] }
+shuttle-runtime = { version = "0.35.2", default-features = false }
+shuttle-salvo = { version = "0.35.2" }
+shuttle-secrets = { version = "0.35.2" }
+shuttle-service = { version = "0.35.2" }

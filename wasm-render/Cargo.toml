@@ -1,9 +1,16 @@
 [package]
 name = "wasm-render"
+autobins=false
 version.workspace = true
 authors.workspace = true
 description.workspace = true
 edition.workspace = true
+
+[profile.release]
+# Reduces the binary size of the WASM file.
+lto = true
+opt-level="z"
+
 
 [dependencies]
 js-sys = "0.3.64"
